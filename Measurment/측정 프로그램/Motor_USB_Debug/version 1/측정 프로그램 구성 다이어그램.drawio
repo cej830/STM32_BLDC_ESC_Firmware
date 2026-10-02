@@ -1,0 +1,100 @@
+<mxfile host="Electron">
+  <diagram name="페이지-1" id="wXKcWnI6S3P6A9mBJ8fU">
+    <mxGraphModel dx="1542" dy="922" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="330" width="870" x="80" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="166" width="310" x="80" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="166" width="310" x="425" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="166" width="310" x="770" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="166" width="310" x="80" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="166" width="310" x="425" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="166" width="310" x="770" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-9" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="STEP 1&amp;nbsp; 만 트리거&amp;nbsp;" vertex="1">
+          <mxGeometry height="30" width="110" x="110" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-10" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="STEP 2" vertex="1">
+          <mxGeometry height="30" width="60" x="550" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-11" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="STEP 3" vertex="1">
+          <mxGeometry height="30" width="60" x="910" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="STEP 4" vertex="1">
+          <mxGeometry height="30" width="60" x="200" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-13" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="STEP 5" vertex="1">
+          <mxGeometry height="30" width="60" x="550" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="STEP 6" vertex="1">
+          <mxGeometry height="30" width="60" x="910" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="BEMF" vertex="1">
+          <mxGeometry height="30" width="60" x="425" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CtjBXQJb5Anhf-FKC8Ge-16" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="기본 화면" vertex="1">
+          <mxGeometry height="30" width="60" x="80" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="OPEN LOOP&amp;nbsp; 기록부만 따로 보기" vertex="1">
+          <mxGeometry height="30" width="210" x="180" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="스텝 진행 시간" vertex="1">
+          <mxGeometry height="30" width="90" x="260" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="스텝 진행 시간" vertex="1">
+          <mxGeometry height="30" width="90" x="630" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="스텝 진행 시간" vertex="1">
+          <mxGeometry height="30" width="90" x="980" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-5" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="스텝 진행 시간" vertex="1">
+          <mxGeometry height="30" width="90" x="280" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="스텝 진행 시간" vertex="1">
+          <mxGeometry height="30" width="90" x="630" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-7" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="스텝 진행 시간" vertex="1">
+          <mxGeometry height="30" width="90" x="980" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="e rpm" vertex="1">
+          <mxGeometry height="30" width="190" x="970" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="zc 검출 순간 시각화" vertex="1">
+          <mxGeometry height="30" width="130" x="80" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="30도 전기각 대기&amp;nbsp; 시각화" vertex="1">
+          <mxGeometry height="30" width="130" x="250" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-16" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="adc_vcom 과 sw_vcom의 오차율" vertex="1">
+          <mxGeometry height="30" width="190" x="950" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-17" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="현재 STEP , CCR 정보" vertex="1">
+          <mxGeometry height="30" width="190" x="960" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-18" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="특이 케이스 발생시 전후 순간 기록" vertex="1">
+          <mxGeometry height="30" width="190" x="410" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-19" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="클로즈 루프 특이케이스 발생 사례&amp;nbsp;&lt;br&gt;N 건" vertex="1">
+          <mxGeometry height="30" width="190" x="950" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="Aqo12Ez--oqOTWRYsneP-20" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="여러 샘플에 거친 오차정도가 어느정도 인지.&amp;nbsp; CCR 에따른 평균 과 표준편차&amp;nbsp;" vertex="1">
+          <mxGeometry height="30" width="225" x="117.5" y="490" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,25 @@
+<mxfile host="Electron">
+  <diagram name="페이지-1" id="0qVgQW-FQJrvKcwloZAf">
+    <mxGraphModel dx="1542" dy="922" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="6dhY58hVabDz6J-c6ZSB-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="USB buffer" vertex="1">
+          <mxGeometry height="30" width="90" x="160" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="6dhY58hVabDz6J-c6ZSB-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="struct packet" vertex="1">
+          <mxGeometry height="30" width="90" x="320" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="6dhY58hVabDz6J-c6ZSB-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="struct packet" vertex="1">
+          <mxGeometry height="30" width="90" x="320" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="6dhY58hVabDz6J-c6ZSB-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="struct packet" vertex="1">
+          <mxGeometry height="30" width="90" x="320" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="6dhY58hVabDz6J-c6ZSB-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="struct packet" vertex="1">
+          <mxGeometry height="30" width="90" x="320" y="350" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

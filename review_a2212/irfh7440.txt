@@ -1,0 +1,348 @@
+PAGE 1
+  StrongIRFET™
+    IRFH7
+440PbF
+1 Rev . 2.5, 2020-04-16
+HEXFET® P ower MOSFET
+Application
+ Brushed Motor drive applications
+ BLDC Motor drive applications
+ PWM Inverterized topologies
+ Battery powered circuits
+ Half-bridge and full-bridge topologies
+ Electronic ballast applications
+ Synchronous rectifier applications
+ Resonant mode power supplies
+ OR-ing and redundant power switches
+ DC/DC and AC/DC converters
+Benefits
+ Improved  Gate, Avalanche and Dynamic dV/dt Ruggedness
+ Fully Characterized Capacitance and Avalanche SOA
+ Enhanced body diode dV/dt and dI/dt Capability
+ RoHS Compliant containing no Lead, no Bromide,
+and no Halogen
+VDSS 40V
+RDS(on) t yp. 1.8m 
+   ma x 2.4m 
+ID 15 9A
+Fig 1.  T ypical On -Resistance vs. Gate Voltage Fig 2.  Maximum Drain Current vs. Case Temperature
+PQFN 5X6 mm
+Base part number Package Type Standard Pack Orderable Part Number Note Form Quantity
+IRFH7440PbF PQFN 5mm x 6mm Tape and Reel 4000 IRFH7440TRPbF
+PQFN 5mm x 6mm Tape and Reel 400 IRFH7440TR2PbF EOL notice # 259
+
+PAGE 2
+ IRFH7440PbF 
+2  Rev. 2.5, 2020-04-16 
+Absolute Maximum Rating 
+ Symbol Parameter Max. Units 
+ID @ TC(Bottom) = 25°C Continuous Drain Current, VGS @ 10V  159 
+A    ID @ TC(Bottom) = 100°C Continuous Drain Current, VGS @ 10V  101 
+IDM Pulsed Drain Current  636 
+PD @ TC = 25°C Maximum Power Dissipation 104 W 
+  Linear Derating Factor  0.83 W/°C 
+VGS Gate-to-Source Voltage  ± 20 V 
+dv/dt Peak Diode Recovery 3.0 V/ns 
+TJ  
+TSTG 
+Operating Junction and 
+Storage Temperature Range -55  to + 150 °C   
+Avalanche Characteristics 
+ Symbol Parameter Max. Units 
+EAS (Thermally limited) Single Pulse Avalanche Energy  121 mJ   EAS (Thermally limited) Single Pulse Avalanche Energy  232 
+IAR Avalanche Current  See Fig 15, 16, 22a, 22b   A 
+EAR Repetitive Avalanche Energy  mJ 
+Thermal Resistance  
+  Parameter Typ. Max. Units 
+RJC (Bottom) Junction-to-Case  ––– 1.2 
+°C/W  RJC (Top) Junction-to-Case  ––– 31 
+RJA  Junction-to-Ambient  ––– 35 
+RJA (<10s) Junction-to-Ambient  ––– 22 
+Static @ TJ = 25°C (unless otherwise specified) 
+ Symbol Parameter Min. Typ. Max. Units Conditions 
+V(BR)DSS Drain-to-Source Breakdown Voltage 40 ––– ––– V VGS = 0V, ID = 250µA 
+V(BR)DSS/TJ  Breakdown Voltage Temp. Coefficient ––– 0.031 ––– mV/°C Reference to 25°C, ID = 1.0mA  
+RDS(on)    ––– 1.8 2.4 m VGS = 10V, ID = 50A  
+Static Drain-to-Source On-Resistance    ––– 2.7 –––  VGS = 6.0V, ID = 25A  
+VGS(th) Gate Threshold Voltage  2.2 ––– 3.9 V VDS = VGS, ID = 100µA 
+IDSS   Drain-to-Source Leakage Current   ––– ––– 1.0 µA 
+VDS = 40V, VGS = 0V 
+––– ––– 150 VDS = 40V,VGS = 0V,TJ = 125°C 
+IGSS   Gate-to-Source Forward Leakage ––– ––– 100 nA 
+VGS = 20V 
+Gate-to-Source Reverse Leakage ––– ––– - 100 VGS = -20V 
+RG Gate Resistance ––– 2.6 –––        
+Notes: 
+ Rating refers to the product only with datasheet specified absolute maximum values, maintaining case temperature 
+     at 25°C. For higher case temperature please refer to Diagram 2. De -rating will be required based on the actual 
+     environmental conditions. 
+ Repetitive rating; pulse width limited by max. junction temperature. 
+ Limited by TJmax, starting TJ = 25°C, L = 0.097mH, RG = 50, IAS = 50A, VGS = 10V.  
+ ISD  50A, di/dt  1126A/µs, VDD  V(BR)DSS, TJ  150°C. 
+ Pulse width  400µs; duty cycle  2%. 
+ Coss eff. (TR) is a fixed capacitance that gives the same charging time as C oss while VDS is rising from 0 to 80% VDSS. 
+ Coss eff. (ER) is a fixed capacitance that gives the same energy as C oss while VDS is rising from 0 to 80% VDSS. 
+ When mounted on 1 inch square 2 oz copper pad on 1.5 x 1.5 in. board of  FR -4 material. 
+ R is measured at TJ approximately 90°C. 
+ Limited by TJmax, starting TJ = 25°C, L = 1mH, RG = 50, IAS = 22A, VGS =10V. 
+PAGE 3
+ IRFH7440PbF 
+3  Rev. 2.5, 2020-04-16 
+Dynamic  Electrical Characteristics @ TJ = 25°C (unless otherwise specified) 
+ Symbol Parameter Min. Typ. Max. Units Conditions 
+gfs Forward Transconductance 149 ––– ––– S VDS = 10V, ID = 50A 
+Qg Total Gate Charge  ––– 92 138 
+nC   
+ID = 50A 
+Qgs Gate-to-Source Charge ––– 22 ––– VDS = 20V 
+Qgd Gate-to-Drain Charge ––– 29 ––– VGS = 10V  
+Qsync Total Gate Charge Sync. (Qg - Qgd) ––– 63 –––  
+td(on) Turn-On Delay Time ––– 12 ––– 
+ns 
+VDD = 20V 
+tr Rise Time ––– 45 ––– ID = 30A 
+td(off) Turn-Off Delay Time ––– 53 ––– RG = 2.7 
+tf Fall Time ––– 42 ––– VGS = 10V  
+Ciss Input Capacitance ––– 4574 ––– 
+pF  
+VGS = 0V 
+Coss Output Capacitance ––– 700 ––– VDS = 25V 
+Crss Reverse Transfer Capacitance ––– 466 ––– ƒ = 1.0MHz 
+Coss eff.(ER) Effective Output Capacitance (Energy Related) ––– 863 ––– VGS = 0V, VDS = 0V to 32V  
+Coss eff.(TR) Output Capacitance (Time Related) ––– 1229 ––– VGS = 0V, VDS = 0V to 32V  
+Diode Characteristics  
+ Symbol Parameter Min. Typ. Max. Units Conditions 
+IS   Continuous Source Current  ––– ––– 80 
+A 
+MOSFET symbol 
+(Body Diode) showing  the 
+ISM   Pulsed Source Current ––– ––– 636 integral reverse 
+(Body Diode)  p-n junction diode. 
+VSD Diode Forward Voltage ––– 0.9 1.3 V TJ = 25°C,IS = 50A,VGS = 0V  
+trr  Reverse Recovery Time  ––– 25 ––– ns  TJ = 25°C          VDD = 34V 
+––– 27 ––– TJ = 125°C         IF = 50A,  
+Qrr  Reverse Recovery Charge  ––– 16 ––– nC   TJ = 25°C     di/dt = 100A/µs   
+––– 17 ––– TJ = 125°C          
+IRRM Reverse Recovery Current ––– 1.2 ––– A TJ = 25°C      
+D
+S
+G
+PAGE 4
+ IRFH7440PbF 
+4  Rev. 2.5, 2020-04-16 
+Fig 6.  Normalized On -Resistance vs. Temperature Fig 5.  Typical Transfer Characteristics  
+Fig 4.  Typical Output Characteristics  Fig 3.  Typical Output Characteristics  
+Fig 8.  Typical Gate Charge vs. Gate -to-Source Voltage Fig 7.  Typical Capacitance vs. Drain -to-Source Voltage 
+
+PAGE 5
+ IRFH7440PbF 
+5  Rev. 2.5, 2020-04-16 
+Fig 10.  Maximum Safe Operating Area  
+Fig 11.  Drain -to-Source Breakdown Voltage Fig 12.  Typical C oss Stored Energy  
+Fig 13.  Typical On -Resistance vs. Drain Current 
+Fig 9.  Typical Source -Drain Diode Forward Voltage 
+ 
+
+PAGE 6
+ IRFH7440PbF 
+6  Rev. 2.5, 2020-04-16 
+Fig 14.  Maximum Effective Transient Thermal Impedance, Junction -to-Case  
+Fig 15. Typical Avalanche Current vs. Pulse Width  
+Notes on Repetitive Avalanche Curves , Figures 15, 16: 
+(For further info, see AN-1005 at www.irf.com) 
+1. Avalanche failures assumption:  
+    Purely a thermal phenomenon and failure occurs at a  
+    temperature far in excess of Tjmax. This is validated for every  
+    part type. 
+2. Safe operation in Avalanche is allowed as long asTjmax is not  
+   exceeded. 
+3. Equation below based on circuit and waveforms shown in Figures  
+    22a, 22b. 
+4. PD (ave) = Average power dissipation per single avalanche pulse. 
+5. BV = Rated breakdown voltage (1.3 factor accounts for voltage 
+  increase during avalanche). 
+6. Iav = Allowable avalanche current. 
+7. T = Allowable rise in junction temperature, not to exceed Tjmax  
+    (assumed as 25°C in Figure 14, 16).  
+ tav = Average time in avalanche. 
+ D = Duty cycle in avalanche =  tav ·f 
+ ZthJC(D, tav) = Transient thermal resistance, see Figures 13) 
+  PD (ave) = 1/2 ( 1.3·BV·Iav) = T/ ZthJC 
+  Iav = 2T/ [1.3·BV·Zth] 
+  EAS (AR) = PD (ave)·tav  
+Fig 16. Maximum Avalanche Energy vs. Temperature 
+
+PAGE 7
+ IRFH7440PbF 
+7  Rev. 2.5, 2020-04-16 
+Fig 17.  Threshold Voltage vs. Temperature  Fig 18.  Typical Recovery Current vs. dif/dt  
+Fig 20.  Typical Stored Charge vs. dif/dt  Fig 19.  Typical Recovery Current vs. dif/dt  
+Fig 21.  Typical Stored Charge vs. dif/dt  
+
+PAGE 8
+ IRFH7440PbF 
+8  Rev. 2.5, 2020-04-16 
+Fig 22. Peak Diode Recovery dv/dt Test Circuit for N -Channel HEXFET® Power MOSFETs 
+Fig 23a.  Unclamped Inductive Test Circuit  
+Fig 24a.  Switching Time Test Circuit  
+Fig 25a.  Gate Charge Test Circuit  
+tp
+V (B R )D S S
+I A S
+Fig 23b.  Unclamped Inductive Waveforms  
+Fig 24b.  Switching Time Waveforms  
+Vds
+Vgs
+Id
+Vgs(th)
+Q gs1 Q gs2 Q gd Q godr
+Fig 25b.   Gate Charge Waveform  
+
+PAGE 9
+ IRFH7440PbF 
+9  Rev. 2.5, 2020-04-16 
+Note: For the most current drawing please refer to IR website at http://www.irf.com/package/ 
+PQFN 5x6 Outline "E" Package Details 
+PQFN 5x6 Outline "G" Package Details 
+For more information on board mounting, including footprint and stencil recommendation, please refer to application note 
+AN-1136: 
+http://www.irf.com/technical-info/appnotes/an-1136.pdf 
+For more information on package inspection techniques, please refer to application note AN -1154: 
+
+PAGE 10
+ IRFH7440PbF 
+10  Rev. 2.5, 2020-04-16 
+Note: For the most current drawing please refer to IR website at http://www.irf.com/package/ 
+XXXX
+XYWWX
+XXXXX
+INTERNATIONAL
+RECTIFIER LOGO
+PART NUMBER
+(“4 or 5 digits”)
+MARKING CODE
+(Per Marking Spec)
+ASSEMBLY
+SITE CODE
+(Per SCOP 200-002)
+DATE CODE
+PIN 1
+IDENTIFIER LOT CODE
+(Eng Mode - Min last 4 digits of EATI#)
+(Prod Mode - 4 digits of SPN code)
+PQFN 5x6 Part Marking  
+PQFN 5x6 Tape and Reel 
+
+PAGE 11
+ IRFH7440PbF 
+11  Rev. 2.5, 2020-04-16 
+Qualification Information 
+Qualification level Industrial 
+(per JEDEC JESD47F † guidelines ) 
+Moisture Sensitivity Level  PQFN 5mm x 6mm 
+MSL1 
+(per JEDEC J-STD-020D†) 
+RoHS Compliant Yes 
+† Applicable version of JEDEC standard at the time of product release. 
+Revision History  
+Date Comments Rev 
+01/13/2014  Updated ordering information to reflect the End-Of-Life (EOL) of the mini-reel option (EOL notice #259). 
+ Updated data sheet with the new IR corporate template. 2.1 
+02/19/2015 
+ Updated EAS (L =1mH) = 232mJ on page 2 
+ Updated note 10 “Limited by TJmax, starting TJ = 25°C, L = 1mH, RG = 50Ω, IAS = 22A, VGS =10V”. on 
+page 2 
+2.2 
+06/2/2015 
+ Updated package outline for “option E” and added package outline for “option G” on page 9. 
+ Updated "IFX" logo on page 1 & 11. 
+ Updated tape and reel on page 10. 
+2.3 
+07/07/2015  Corrected package outline for “option E” on page 9. 2.4 
+04/16/2020 
+ Updated datasheet based on IFX template. 
+ Updated Datasheet based on new current rating and application note :App-
+AN_1912_PL51_2001_180356 
+2.5 
+PAGE 12
+ IRFH7440PbF 
+12  Rev. 2.5, 2020-04-16 
+Trademarks of Infineon Technologies AG 
+µHVIC™, µIPM™, µPFC™, AU-ConvertIR™, AURIX™, Cтчч™, CanPAK™, CIPOS™, CIPURSE™, CoolDP™, CoolGaN™, COOLiR™, CoolMOS™, CoolSET™, CoolSiC™, 
+DAVE™, DI-POL™, DirectFET™, DrBlade™, EasyPIM™, EconoBRIDGE™, EconoDUAL™,  EconoPACK™, EconoPIM™, EiceDRIVER™, eupec™, FCOS™, 
+GaNpowIR™, HEXFET™, HITFET™, HybridPACK™, iMOTION™, IRAM™, ISOFACE™, IsoPACK™, LEDrivIR™, LITIX™, MIPAQ™, ModSTACK™, my-d™, NovalithIC™, 
+OPTIGA™, OptiMOS™, ORIGA™, PowIRaudio™, PowIRStage™, PrimePACK™, PrimeSTAC K™, PROFET™, PRO -SIL™, RASIC™, REALф™, SmartLEWIS™, SOLID 
+FLASH™, SPOC™, StrongIRFET™, SupIRBuck™, TEMPFET™, TRENCHSTOP™, TriCore™, UHVIC™, XHP™, XMC™ 
+ 
+Trademarks updated November устц 
+ 
+Other Trademarks 
+All referenced product or service names and trademarks are the property of their respective owners. 
+ Edition устч-с4-тъ 
+Published by 
+Infineon Technologies AG 
+щтшуч Munich, Germany 
+  
+© устч Infineon Technologies AG. 
+All Rights Reserved. 
+  
+Do you have a question about this 
+document? 
+Email: 
+erratum@infineon.com  
+ 
+Document reference 
+ifxт 
+IMPORTANT NOTICE 
+The information given in this document shall in no 
+event be regarded as a guarantee of conditions or 
+characteristics  ҙ҄Beschafenheitsgarantie҅Қ . 
+  
+With respect to any examples, hints or any typical 
+values stated herein and/or any information 
+regarding the application of the product, Infineon 
+Technologies hereby disclaims any and all 
+warranties and liabilities of any kind, including 
+without limitation warranties of non-infringement 
+of intellectual property rights of any third party. 
+  
+In addition, any information given in this 
+document is subject to customer’s compliance 
+with its obligations stated in this document and 
+any applicable legal requirements, norms and 
+standards concerning customer’s products and 
+any use of the product of Infineon Technologies in 
+customer’s applications. 
+  
+The data contained in this document is exclusively 
+intended for technically trained staf. It is the 
+responsibility of customer’s technical 
+departments to evaluate the suitability of the 
+product for the intended application and the 
+completeness of the product information given in 
+this document with respect to such application. 
+  
+For further information on the product, technology, 
+delivery terms and conditions and prices please 
+contact your nearest Infineon Technologies ofice 
+ҙ
+www.infineon.comҚ. 
+ 
+ Please note that this product is not qualified 
+according to the AEC Qтсс or AEC Qтст documents 
+of the Automotive Electronics Council.  
+WARNINGS 
+ Due to technical requirements products may 
+contain dangerous substances. For information on 
+the types in question please contact your nearest 
+Infineon Technologies ofice.  
+ 
+Except as otherwise explicitly approved by Infineon 
+Technologies in a written document signed by 
+authorized representatives of Infineon 
+Technologies, Infineon Technologies’ products 
+may not be used in any applications where a 
+failure of the product or any consequences of the 
+use thereof can reasonably be expected to result in 
+personal injury.  
+      
