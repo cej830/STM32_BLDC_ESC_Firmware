@@ -454,8 +454,9 @@ void Algo_BLDC_TimISRCallback()
 }
 
 
-#define VALID	50
-#define RISK	100
+#define VALID		50
+#define RISK		150
+#define RISK_CNT	8
 
 ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration)
 {
@@ -472,8 +473,6 @@ ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration)
 	}
 
 	if(diff <= VALID) return ZC_VALID;
-	else if (diff <= RISK) return ZC_RISK;
-	else return ZC_REJECT;
 }
 
 

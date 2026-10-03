@@ -11,23 +11,40 @@ class BLDCApp:
         self.view = DashboardView(root)
         self.engine = TelemetryEngine()
 
-        # 이벤트 및 콜백 연결
+        # 기존 버튼 연결
         self.view.btn_connect.config(command=self._on_connect_clicked)
         self.view.btn_record.config(command=self._on_record_clicked)
         self.root.bind("<space>", lambda e: self._on_record_clicked())
+
+        # [신규] 100회전 시퀀스 저장 버튼 연결
+        self.view.btn_save_seq.config(command=self._on_save_sequence_clicked)
 
         self.engine.on_saved_callback = self._on_csv_saved
 
         # UI 갱신 타이머 시작 (10Hz)
         self._schedule_refresh()
 
+    
+    def _on_save_sequence_clicked(self):
+        if not self.engine.is_running:
+            return
+        # 상시 쌓여있던 100회전(최대 600행) 요약 데이터를 즉시 파일로 생성
+        fname = self.engine.export_sequence_csv()
+        if fname:
+            self.view.append_log(f"100회전 시퀀스 요약본 저장 완료: {fname}")
+        else:
+            self.view.append_log("아직 수집된 클로즈루프 시퀀스 데이터가 부족합니다.")
+    
+    
     def _on_connect_clicked(self):
+        # 연결 시 두 버튼 모두 활성화
         if not self.engine.is_running:
             port = self.view.ent_port.get().strip()
             ok, msg = self.engine.connect(port)
             if ok:
                 self.view.btn_connect.config(text="연결 해제")
                 self.view.btn_record.config(state=tk.NORMAL)
+                self.view.btn_save_seq.config(state=tk.NORMAL)  # 활성화
                 self.view.append_log(f"[{port}] 시리얼 스트림 수신 시작")
             else:
                 messagebox.showerror("오류", f"포트 열기 실패: {msg}")
@@ -35,6 +52,7 @@ class BLDCApp:
             self.engine.disconnect()
             self.view.btn_connect.config(text="연결")
             self.view.btn_record.config(state=tk.DISABLED)
+            self.view.btn_save_seq.config(state=tk.DISABLED)
             self.view.lbl_rec_mode.config(text="대기 중", foreground="gray")
             self.view.append_log("연결 해제됨")
 
@@ -51,7 +69,7 @@ class BLDCApp:
             self.engine.set_recording(False)
             self.view.btn_record.config(text="● 롤링 캡처 시작 (최신 600개)")
             self.view.lbl_rec_mode.config(text="저장 중...", foreground="blue")
-            self.engine.export_csv(reason="MANUAL_STOP")
+            self.engine.export_raw_csv(reason="MANUAL_STOP")
 
     def _on_csv_saved(self, filepath, count, reason):
         self.view.btn_record.config(text="● 롤링 캡처 시작 (최신 600개)")
@@ -75,15 +93,21 @@ class BLDCApp:
         loss_ol = (s["lost_ol"] / ol_tot * 100.0) if ol_tot > 0 else 0.0
         loss_cl = (s["lost_cl"] / cl_tot * 100.0) if cl_tot > 0 else 0.0
 
-        # 1. 상단 통계 및 CCR 표시
+        # 상단 모터 상태 영역
         curr_ccr = s.get("curr_ccr", 0)
+        e_rpm = s.get("e_rpm", 0)
+        m_rpm = s.get("m_rpm", 0)
+        zc_cycle_us = s.get("cycle_zc_us", 0)
+
         self.view.lbl_stream.config(
             text=f"수신: {s['total_recv']}개 | 전체 유실률: {loss_all:4.2f}% (OL: {loss_ol:4.2f}% / CL: {loss_cl:4.2f}%) | "
                  f"평균 dt: {s['avg_dt']:4.1f}us | 스텝에러: {s['step_seq_err']}회"
         )
+
         self.view.lbl_flags.config(
-            text=f"모터 상태: CCR: [{curr_ccr:4d}] | Step: [{s['curr_step']}] {s['curr_mode']} | "
-                 f"ZC: [{s['curr_zc_str']}] | TIM침투(9998)={s['race_9998']}회 | 타임아웃(9999)={s['timeout_9999']}회"
+            text=f"모터 상태: CCR:[{curr_ccr:4d}] | M-RPM:[{m_rpm:5d} RPM] (전기각 E-RPM:{e_rpm:5d}, 360°ZC:{zc_cycle_us}us) | "
+                 f"Step:[{s['curr_step']}] {s['curr_mode']} [{s['curr_zc_str']}] | "
+                 f"TIM침투(9998)={s['race_9998']} | 타임아웃(9999)={s['timeout_9999']}"
         )
 
         # 2. 스텝 1~6 테이블 갱신

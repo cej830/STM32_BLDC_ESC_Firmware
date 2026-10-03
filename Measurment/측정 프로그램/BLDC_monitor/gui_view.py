@@ -13,7 +13,7 @@ class DashboardView:
         self._build_log_console()
 
     def _build_top_panel(self):
-        frame = ttk.LabelFrame(self.root, text="통신 연결 및 롤링 캡처")
+        frame = ttk.LabelFrame(self.root, text="통신 및 캡처 제어")
         frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(frame, text="Port:").pack(side=tk.LEFT, padx=5)
@@ -24,8 +24,13 @@ class DashboardView:
         self.btn_connect = ttk.Button(frame, text="연결")
         self.btn_connect.pack(side=tk.LEFT, padx=5)
 
-        self.btn_record = ttk.Button(frame, text="● 롤링 캡처 시작 (최신 600개)", state=tk.DISABLED)
-        self.btn_record.pack(side=tk.LEFT, padx=15)
+        # 1. 기존 50us Raw 600개 수동 캡처 버튼
+        self.btn_record = ttk.Button(frame, text="● Raw 600개 캡처 (Space)", state=tk.DISABLED)
+        self.btn_record.pack(side=tk.LEFT, padx=10)
+
+        # 2. [신규] 상시 수집된 100회전(600행) 요약 즉시 추출 버튼
+        self.btn_save_seq = ttk.Button(frame, text="💾 100회전 시퀀스 로그 저장", state=tk.DISABLED)
+        self.btn_save_seq.pack(side=tk.LEFT, padx=10)
 
         self.lbl_rec_mode = ttk.Label(frame, text="대기 중", foreground="gray")
         self.lbl_rec_mode.pack(side=tk.LEFT, padx=5)
