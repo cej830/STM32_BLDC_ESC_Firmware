@@ -195,22 +195,21 @@ class TelemetryEngine:
                     "seq_cycle": self.sequence_counter,
                     "step": step,
                     "ccr": pkt["ccr"],
-                    "e_rpm": int(self.analyzer.e_rpm),          # 1사이클(360도 ZC-to-ZC) 기반 전기적 RPM
-                    "m_rpm": int(self.analyzer.m_rpm),          # 7극쌍 반영 실제 모터 기계적 RPM
-                    "cycle_zc_us": self.analyzer.cycle_zc_period_us, # 전기각 1회전(360도) 순수 ZC 간격
+                    "e_rpm": int(self.analyzer.e_rpm),
+                    "m_rpm": int(self.analyzer.m_rpm),
+                    "cycle_zc_us": self.analyzer.cycle_zc_period_us,
                     "step_period_us": node.step_period,
                     "offset_avg_us": node.period_offset_us,
                     "zc_duration_us": node.curr_duration if node.curr_duration else 0,
                     "zc_pos_pct": round(node.zc_pos_pct, 1),
                     "diff_us": node.diff_us,
                     "status": node.status,
-                    "risk_streak": node.risk_streak,
-                    "max_risk": node.max_risk_streak,
-                    "reject_total": node.reject_count
+                    "global_risk_streak": self.analyzer.global_risk_streak,
+                    "global_max_risk": self.analyzer.global_max_risk_streak,
+                    "global_reject_total": self.analyzer.global_reject_count
                 }
                 self._current_cycle_steps[step] = snap
 
-                # 스텝 6개가 모두 채워졌거나, 스텝 6 완료 후 1이 들어와 1사이클이 끝난 경우
                 if len(self._current_cycle_steps) == 6 or (step == 6 and 1 in self._current_cycle_steps):
                     for s_num in sorted(self._current_cycle_steps.keys()):
                         self.sequence_summary_buffer.append(self._current_cycle_steps[s_num])
@@ -218,7 +217,7 @@ class TelemetryEngine:
                     self._current_cycle_steps.clear()
                     self.sequence_counter += 1
 
-        # 50us 원시 패킷 버퍼 (스페이스바 캡처용 기존 기능 100% 유지)
+        # 50us 원시 패킷 버퍼
         if self.is_recording:
             record = {
                 **pkt,
@@ -226,7 +225,7 @@ class TelemetryEngine:
                 "bemf_prev": self._last_bemf if self._last_bemf else pkt["bemf_curr"],
                 "zc_eval": zc_eval["status"] if zc_eval else "N/A",
                 "zc_diff_us": zc_eval["diff_us"] if zc_eval else 0,
-                "risk_streak": zc_eval["risk_streak"] if zc_eval else 0
+                "global_risk_streak": self.analyzer.global_risk_streak
             }
             self.raw_buffer.append(record)
 

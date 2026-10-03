@@ -93,7 +93,6 @@ class BLDCApp:
         loss_ol = (s["lost_ol"] / ol_tot * 100.0) if ol_tot > 0 else 0.0
         loss_cl = (s["lost_cl"] / cl_tot * 100.0) if cl_tot > 0 else 0.0
 
-        # 상단 모터 상태 영역
         curr_ccr = s.get("curr_ccr", 0)
         e_rpm = s.get("e_rpm", 0)
         m_rpm = s.get("m_rpm", 0)
@@ -110,36 +109,39 @@ class BLDCApp:
                  f"TIM침투(9998)={s['race_9998']} | 타임아웃(9999)={s['timeout_9999']}"
         )
 
-        # 2. 스텝 1~6 테이블 갱신
+        # [신규] 글로벌 리스크 레이블 갱신 (단 1개로 전체 상태 표시)
+        g_streak = self.engine.analyzer.global_risk_streak
+        g_max = self.engine.analyzer.global_max_risk_streak
+        g_reject = self.engine.analyzer.global_reject_count
+        
+        # 위험도에 따른 색상 변경
+        streak_color = "red" if g_streak >= (config.REJECT_COUNT // 2) else ("darkorange" if g_streak > 0 else "blue")
+        self.view.lbl_global_risk.config(
+            text=f"탈조 방지 모니터: 연속 RISK: [{g_streak:2d}/{config.REJECT_COUNT}] | 역대 최대 연속 RISK: [{g_max:2d}] | 총 REJECT: [{g_reject}회]",
+            foreground=streak_color
+        )
+
+        # 스텝 1~6 테이블 갱신 (개별 streak 열 제거)
         avg_p = self.engine.analyzer.avg_step_period
         for s_idx in range(1, 7):
             node = self.engine.analyzer.nodes[s_idx]
             
-            # 스텝 총길이 및 편차
             period_str = f"{node.step_period} us" if node.step_period > 0 else "---"
             offset_str = f"{node.period_offset_us:+d} us" if avg_p > 0 else "---"
-
-            # ZC duration 및 50% 센터링 위치
             dur_str = f"{node.curr_duration} us" if node.curr_duration is not None else "---"
             center_str = f"{node.zc_pos_pct:4.1f} %" if node.step_period > 0 else "---"
-
-            # 회전 간 편차
             diff_us_str = f"{node.diff_us} us" if node.prev_duration is not None else "---"
-            streak_str = f"{node.risk_streak}/{config.REJECT_COUNT}"
 
             self.view.tree.item(
                 str(s_idx),
                 values=(
                     f"Step {s_idx}",
-                    period_str,       # 스텝 총길이 (예: 1140 us)
-                    offset_str,       # 6스텝 평균 대비 (예: +15 us, -10 us)
-                    dur_str,          # ZC 발생시간 (예: 570 us)
-                    center_str,       # ZC 위치 (예: 50.0%)
-                    diff_us_str,      # 360도 전 대비 편차 (예: 12 us)
-                    node.status,      # VALID / RISK / REJECT
-                    streak_str,       # 현재 연속 RISK
-                    node.max_risk_streak, # 역대 최대 연속 RISK
-                    node.reject_count # 총 REJECT 발생 수
+                    period_str,       # 스텝 총길이
+                    offset_str,       # 6스텝 평균 대비 편차
+                    dur_str,          # ZC 발생시간
+                    center_str,       # ZC 위치 (%)
+                    diff_us_str,      # 360도 전 대비 편차
+                    node.status       # VALID / RISK / REJECT
                 ),
                 tags=(node.status,)
             )

@@ -13,6 +13,9 @@
 #define BLANKING_TIME 				50
 #define ISR_LATENCY					19
 
+#define VALID			100
+#define MAX_RISK_CNT	8
+
 
 /*
 #define START_CCR					220
@@ -59,7 +62,18 @@ static volatile MotorControl motorcontrol = {0};
 static volatile ZC_Management zc_manage = {0};
 static volatile ZC_History zc_history = {0};
 static volatile ZC_Over_cnt zc_over_cnt = {0};
-static volatile ZC_Check_t zc_check[6] = {0};
+
+typedef struct
+{
+	uint16_t* duration_zc_last;
+	uint8_t cnt_risk;
+}ZC_Check_t;
+
+static uint16_t last_duration_buff[6] = {0};
+
+static ZC_Check_t zc_check = {
+		.duration_zc_last = last_duration_buff,
+		.cnt_risk = 0 };
 
 //---------------에러 관리 함수------------------------
 void ClearError();
@@ -87,6 +101,8 @@ static void sixstep(uint8_t step , uint16_t new_CCR);
 static inline uint16_t cal_Edgree_Delay_time(uint16_t current_time, uint16_t last_time, uint16_t step_start,uint8_t is_first );
 static uint16_t Get_Actual_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t PAR, uint8_t is_First);
 
+
+ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration);
 void ClearError() { motor_error = NO_ERROR; }
 MotorError_t Get_ErrorCode() { return motor_error; }
 
@@ -116,6 +132,12 @@ void Algo_BLDC_Startup()
 	zc_over_cnt.cnt_delay_over = 0;
 	zc_over_cnt.cnt_elapsed_over = 0;
 
+	for(uint8_t i=0; i<6; i++)
+	{
+		zc_check.duration_zc_last[i] = 0;
+	}
+	zc_check.cnt_risk = 0;
+
 	Clear_LogRingBuffer();
 	sixstep(motorcontrol.step, motorcontrol.CCR);
 }
@@ -127,7 +149,6 @@ void Algo_BLDC_Startup()
  */
 uint8_t Algo_BLDC_RunOpenloop()
 {
-
 	//2. 현재 스텝 인가 및 시간 기록
 	zc_manage.timestamp_start = Driver_Time_Get_Us();
 	sixstep(motorcontrol.step, motorcontrol.CCR);
@@ -191,7 +212,6 @@ uint8_t Algo_BLDC_RunOpenloop()
 		return 1;
 	}
 
-
 	zc_history.current_delay = OpenLoop_delay_us;
 	return 0;
 }
@@ -199,7 +219,6 @@ uint8_t Algo_BLDC_RunOpenloop()
 
 static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motorlog_Temporary* tempor)
 {
-
 	uint8_t info = (uint8_t)(motorcontrol.step & 0x0F);
 
 	if(motorcontrol.motorstate != OPEN_LOOP)
@@ -277,7 +296,6 @@ uint16_t Get_Linear_ZC(uint16_t t_curr, uint16_t t_prev, int16_t BEMF_current, i
 
 
 
-
 void Algo_BLDC_AdcISRCallback()
 {
 	//Get timestamp and Duration.
@@ -335,27 +353,32 @@ void Algo_BLDC_AdcISRCallback()
 
 		if(zc_event == 1)//ZC가 발생한 경우
 		{
-			//션형근사를 통한 ZC 발생 timestamp를 구하기.
-
 			//1. 선형보간을 통해 두 ADC sample 사이의 실제 ZC timestamp 추정
-
 			uint16_t timestamp_zc = Get_Linear_ZC(timestamp_curr,
 										 	 	 	zc_history.timestamp_prev,
 													BEMF_curr,
 													zc_history.BEMF_prev);
 
 			tempor.log_timestamp_zc = timestamp_zc;
-			//timestamp_zc = timestamp_curr;
-
 
 			//2. 스텝 시작 -> 보간 ZC 까지의 시간 계산
 			uint16_t zc_duration = (uint16_t)(timestamp_zc - zc_manage.timestamp_start);
 
-			/*
-			uint16_t zc_duration_prev = zc_check[motorcontrol.step-1];
-			Check_Valid_ZC(zc_duration_prev, zc_duration);
-			zc_check[motorcontrol.step-1] = zc_duration;
-			*/
+			uint16_t zc_duration_last = zc_check.duration_zc_last[motorcontrol.step-1];
+			ZC_Valid_Status_t zc_status = Check_Valid_ZC(zc_duration_last, zc_duration);
+
+			if( zc_status == ZC_REJECT )
+			{
+				Driver_BLDC_HW_Stop();
+				motor_error = ZC_REJECTED;
+				tempor.log_delay_trigger = 9997;
+				Packing_Motor_Log(&motor_log, &tempor);
+				motor_log.delay_PAR = zc_manage.CNT++;
+				Push_LogRingBuffer(&motor_log);
+				return;
+			}
+
+			zc_check.duration_zc_last[motorcontrol.step-1] = zc_duration;
 
 			//3. ZC-to-ZC 60도 로부터 30도 target delay 계산
 			uint16_t target_delay = cal_Edgree_Delay_time(timestamp_zc,
@@ -454,29 +477,46 @@ void Algo_BLDC_TimISRCallback()
 }
 
 
-#define VALID		50
-#define RISK		150
-#define RISK_CNT	8
-
 ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration)
 {
 	uint16_t diff = 0;
+
+	/* 해당 Step의 첫 데이터 */
+	if(prev_duration == 0)
+	{
+		zc_check.cnt_risk = 0;
+		return ZC_VALID;
+	}
 
 	if(prev_duration >= curr_duration)
 	{
 		diff = (uint16_t)(prev_duration - curr_duration);
 	}
-
 	else
 	{
 		diff = (uint16_t)(curr_duration - prev_duration);
 	}
 
-	if(diff <= VALID) return ZC_VALID;
+	/* 정상 */
+	if(diff <= VALID)
+	{
+		zc_check.cnt_risk = 0;
+		return ZC_VALID;
+	}
+
+	else
+	{
+		zc_check.cnt_risk++;
+		if(zc_check.cnt_risk >= MAX_RISK_CNT)
+		{
+			return ZC_REJECT;
+		}
+		else
+		{
+			return ZC_RISK;
+		}
+	}
 }
-
-
-
 /* 레이트 리미터: 목표 딜레이로 점진적 수렴 */
 uint16_t Get_Actual_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t PAR, uint8_t is_First)
 {

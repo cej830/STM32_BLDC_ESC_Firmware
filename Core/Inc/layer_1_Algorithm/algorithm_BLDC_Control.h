@@ -102,11 +102,6 @@ typedef struct
 	uint16_t cnt_elapsed_over;
 }ZC_Over_cnt;
 
-typedef struct
-{
-	uint16_t duration_zc_prev;
-}ZC_Check_t;
-
 
 void ClearError();
 MotorError_t Get_ErrorCode();

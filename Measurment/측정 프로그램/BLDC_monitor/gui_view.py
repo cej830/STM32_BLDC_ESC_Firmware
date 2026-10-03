@@ -5,7 +5,7 @@ class DashboardView:
     def __init__(self, root):
         self.root = root
         self.root.title("BLDC Telemetry & ZC Stability Monitor")
-        self.root.geometry("1060x680") # 가로 폭을 살짝 넓혀 가독성 확보
+        self.root.geometry("1060x680")
 
         self._build_top_panel()
         self._build_stream_status_panel()
@@ -24,11 +24,9 @@ class DashboardView:
         self.btn_connect = ttk.Button(frame, text="연결")
         self.btn_connect.pack(side=tk.LEFT, padx=5)
 
-        # 1. 기존 50us Raw 600개 수동 캡처 버튼
         self.btn_record = ttk.Button(frame, text="● Raw 600개 캡처 (Space)", state=tk.DISABLED)
         self.btn_record.pack(side=tk.LEFT, padx=10)
 
-        # 2. [신규] 상시 수집된 100회전(600행) 요약 즉시 추출 버튼
         self.btn_save_seq = ttk.Button(frame, text="💾 100회전 시퀀스 로그 저장", state=tk.DISABLED)
         self.btn_save_seq.pack(side=tk.LEFT, padx=10)
 
@@ -46,7 +44,6 @@ class DashboardView:
         )
         self.lbl_stream.pack(anchor=tk.W, padx=10, pady=2)
 
-        # CCR 표시가 포함된 상태 레이블
         self.lbl_flags = ttk.Label(
             frame, 
             text="모터 상태: CCR: [   0] | Step: [-] IDLE | ZC: [Searching] | TIM침투(9998)=0회 | 타임아웃(9999)=0회", 
@@ -54,14 +51,23 @@ class DashboardView:
         )
         self.lbl_flags.pack(anchor=tk.W, padx=10, pady=2)
 
+        # [신규] 글로벌 리스크 및 탈조 방지 모니터링 전용 단일 레이블
+        self.lbl_global_risk = ttk.Label(
+            frame,
+            text="탈조 방지 모니터: 연속 RISK: [0/8] | 역대 최대 연속 RISK: [0] | 총 REJECT: [0회]",
+            font=("Consolas", 10, "bold"),
+            foreground="blue"
+        )
+        self.lbl_global_risk.pack(anchor=tk.W, padx=10, pady=2)
+
     def _build_zc_table_panel(self):
         frame = ttk.LabelFrame(self.root, text="스텝별 ZC 타이밍 분석 & 모터 위상 대칭성 (이상적 ZC위치 = 50.0%)")
         frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # 9개 컬럼으로 확장
+        # 7개 컬럼으로 간소화 (글로벌 카운터는 상단 패널로 단일화)
         cols = (
             "step", "step_period", "offset_avg", "zc_duration", 
-            "zc_center", "diff_us", "status", "streak", "max_risk", "reject_total"
+            "zc_center", "diff_us", "status"
         )
         self.tree = ttk.Treeview(frame, columns=cols, show="headings", height=7)
 
@@ -72,16 +78,12 @@ class DashboardView:
             "zc_duration": "ZC발생시간",
             "zc_center": "ZC 위치(%)",
             "diff_us": "회전간 편차",
-            "status": "판정",
-            "streak": "연속 RISK",
-            "max_risk": "최대 RISK",
-            "reject_total": "총 REJECT"
+            "status": "판정"
         }
         
         widths = {
-            "step": 75, "step_period": 95, "offset_avg": 95, "zc_duration": 95,
-            "zc_center": 90, "diff_us": 90, "status": 80, "streak": 85,
-            "max_risk": 85, "reject_total": 85
+            "step": 90, "step_period": 120, "offset_avg": 120, "zc_duration": 120,
+            "zc_center": 110, "diff_us": 110, "status": 100
         }
 
         for c, text in headers.items():
@@ -90,14 +92,13 @@ class DashboardView:
 
         self.tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # 상태별 컬러 태그
         self.tree.tag_configure("VALID", foreground="green")
         self.tree.tag_configure("RISK", foreground="darkorange", font=("Segoe UI", 9, "bold"))
         self.tree.tag_configure("REJECT", foreground="red", font=("Segoe UI", 9, "bold"))
 
         for s in range(1, 7):
             self.tree.insert("", tk.END, iid=str(s), values=(
-                f"Step {s}", "---", "---", "---", "---", "---", "INIT", "0/5", "0", "0"
+                f"Step {s}", "---", "---", "---", "---", "---", "INIT"
             ))
 
     def _build_log_console(self):

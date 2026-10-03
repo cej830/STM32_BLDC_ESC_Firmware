@@ -170,7 +170,6 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	//Service_UART_RunCLI();
  	Service_BLDC_Run();
-
  	Service_Telemetry_Run();
   }
   /* USER CODE END 3 */
