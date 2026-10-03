@@ -49,7 +49,7 @@ typedef enum
 	ZC_VALID=0,
 	ZC_RISK,
 	ZC_REJECT
-}ZC_Status_t;
+}ZC_Valid_Status_t;
 
 
 //모터 관리 변수 구조체, TIM3 ISR
@@ -101,6 +101,12 @@ typedef struct
 	uint16_t cnt_delay_over;
 	uint16_t cnt_elapsed_over;
 }ZC_Over_cnt;
+
+typedef struct
+{
+	uint16_t duration_zc_prev;
+}ZC_Check_t;
+
 
 void ClearError();
 MotorError_t Get_ErrorCode();

@@ -59,6 +59,7 @@ static volatile MotorControl motorcontrol = {0};
 static volatile ZC_Management zc_manage = {0};
 static volatile ZC_History zc_history = {0};
 static volatile ZC_Over_cnt zc_over_cnt = {0};
+static volatile ZC_Check_t zc_check[6] = {0};
 
 //---------------에러 관리 함수------------------------
 void ClearError();
@@ -240,44 +241,6 @@ static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motorlog_Temporary* 
 }
 
 
-/*
-ZC_Status_t Validate_ZC_Duration(uint16_t duration, uint16_t last_duration, uint8_t is_first)
-{
-	if(is_first)
-	{
-		return ZC_VALID;
-	}
-
-	uint16_t diff;
-
-	if(duration >= last_duration)
-	{
-		diff = duration - last_duration;
-	}
-
-	else
-	{
-		diff = last_duration - duration;
-	}
-
-	//step_duration과 last_duration이 X 이내로 차이날때, valid
-	if( diff <= ZC_VALID_RANGE)
-	{
-		return ZC_VALID;
-	}
-
-	//step_duration과 last_duration이 X 이내 X2 이내로 차이날때, Risk
-	if( diff <= ZC_RISK_RANGE)
-	{
-		return ZC_RISK;
-	}
-
-	//step_duration과 last_duration이 X2 보다 더 차이날때, Rejected
-	return ZC_REJECT;
-}
-*/
-
-
 uint16_t Get_Linear_ZC(uint16_t t_curr, uint16_t t_prev, int16_t BEMF_current, int16_t BEMF_prev )
 {
 	// t_zc = t_prev + (t_curr - t_prev) * {|Bprev|/(|Bprev| + |Bcurr|)}
@@ -388,6 +351,11 @@ void Algo_BLDC_AdcISRCallback()
 			//2. 스텝 시작 -> 보간 ZC 까지의 시간 계산
 			uint16_t zc_duration = (uint16_t)(timestamp_zc - zc_manage.timestamp_start);
 
+			/*
+			uint16_t zc_duration_prev = zc_check[motorcontrol.step-1];
+			Check_Valid_ZC(zc_duration_prev, zc_duration);
+			zc_check[motorcontrol.step-1] = zc_duration;
+			*/
 
 			//3. ZC-to-ZC 60도 로부터 30도 target delay 계산
 			uint16_t target_delay = cal_Edgree_Delay_time(timestamp_zc,
@@ -486,6 +454,30 @@ void Algo_BLDC_TimISRCallback()
 }
 
 
+#define VALID	50
+#define RISK	100
+
+ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration)
+{
+	uint16_t diff = 0;
+
+	if(prev_duration >= curr_duration)
+	{
+		diff = (uint16_t)(prev_duration - curr_duration);
+	}
+
+	else
+	{
+		diff = (uint16_t)(curr_duration - prev_duration);
+	}
+
+	if(diff <= VALID) return ZC_VALID;
+	else if (diff <= RISK) return ZC_RISK;
+	else return ZC_REJECT;
+}
+
+
+
 /* 레이트 리미터: 목표 딜레이로 점진적 수렴 */
 uint16_t Get_Actual_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t PAR, uint8_t is_First)
 {
@@ -539,7 +531,6 @@ uint16_t Get_Actual_Delaytime(uint16_t current_delay, uint16_t target_delay, uin
 
 	//3. 타겟 딜레이 시간과 현재 딜레이시간이 같을때,
 	return current_delay;
-
 }
 
 /* 현재 스텝에 맞추어 BEMF 값을 Get 하는 함수 @ return | int16_t

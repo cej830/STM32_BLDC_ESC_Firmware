@@ -4,9 +4,6 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="oYpwEXeggUdyEeZ9xFsi-140" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
-          <mxGeometry height="60" width="220" x="1490" y="1840" as="geometry" />
-        </mxCell>
         <mxCell id="2kS2QRoT4Vn5wbSOK_Oq-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="TIM 3" vertex="1">
           <mxGeometry height="40" width="80" x="980" y="90" as="geometry" />
         </mxCell>
@@ -505,6 +502,9 @@
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-123" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="BEMF 측정" vertex="1">
           <mxGeometry height="35" width="80" x="1620" y="1850.5" as="geometry" />
         </mxCell>
+        <mxCell id="oYpwEXeggUdyEeZ9xFsi-141" edge="1" parent="1" source="oYpwEXeggUdyEeZ9xFsi-124" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="oYpwEXeggUdyEeZ9xFsi-123" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-124" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="timestatmp_curr" vertex="1">
           <mxGeometry height="35" width="94" x="1500" y="1850.5" as="geometry" />
         </mxCell>
@@ -515,10 +515,10 @@
           <mxGeometry height="30" width="70" x="1512" y="1770" as="geometry" />
         </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-129" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="zc 판단&lt;div&gt;선형 보간&lt;/div&gt;" vertex="1">
-          <mxGeometry height="35" width="70" x="1720" y="1850.5" as="geometry" />
+          <mxGeometry height="35" width="70" x="1780" y="1851" as="geometry" />
         </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-130" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="delay 계산" vertex="1">
-          <mxGeometry height="35" width="70" x="1804" y="1850.5" as="geometry" />
+          <mxGeometry height="35" width="70" x="1870" y="1850.5" as="geometry" />
         </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-132" edge="1" parent="1" source="oYpwEXeggUdyEeZ9xFsi-131" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;">
           <mxGeometry relative="1" as="geometry">
@@ -529,7 +529,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-131" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="58754" vertex="1">
-          <mxGeometry height="30" width="70" x="1570" y="1960" as="geometry" />
+          <mxGeometry height="30" width="70" x="1570" y="1950" as="geometry" />
         </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-133" connectable="0" parent="1" style="group" value="" vertex="1">
           <mxGeometry height="75" width="290" x="1460" y="2020" as="geometry" />
@@ -545,6 +545,9 @@
         </mxCell>
         <mxCell id="oYpwEXeggUdyEeZ9xFsi-138" parent="oYpwEXeggUdyEeZ9xFsi-133" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;div&gt;timestamp_start&lt;/div&gt;first sample = 1&lt;div&gt;searching = 1&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="100" x="176" y="6.809999999999945" as="geometry" />
+        </mxCell>
+        <mxCell id="oYpwEXeggUdyEeZ9xFsi-142" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="58798" vertex="1">
+          <mxGeometry height="30" width="70" x="2110" y="2010" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
