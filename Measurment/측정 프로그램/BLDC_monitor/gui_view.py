@@ -5,7 +5,7 @@ class DashboardView:
     def __init__(self, root):
         self.root = root
         self.root.title("BLDC Telemetry & ZC Stability Monitor")
-        self.root.geometry("1060x680")
+        self.root.geometry("1100x700")
 
         self._build_top_panel()
         self._build_stream_status_panel()
@@ -44,27 +44,41 @@ class DashboardView:
         )
         self.lbl_stream.pack(anchor=tk.W, padx=10, pady=2)
 
+        # 모터 상태 및 MCU 에러/트리거 플래그 통합 모니터
         self.lbl_flags = ttk.Label(
             frame, 
-            text="모터 상태: CCR: [   0] | Step: [-] IDLE | ZC: [Searching] | TIM침투(9998)=0회 | 타임아웃(9999)=0회", 
+            text="모터 상태: CCR: [   0] | Step: [-] IDLE | ZC: [NOT_YET] | TIM침투(9998)=0 | 타임아웃(9999)=0 | 강제정지(9997/9996)=0/0", 
             font=("Consolas", 10)
         )
         self.lbl_flags.pack(anchor=tk.W, padx=10, pady=2)
 
-        # [신규] 글로벌 리스크 및 탈조 방지 모니터링 전용 단일 레이블
+        # 리스크 모니터 및 ALREADY 카운트 전용 서브 프레임
+        sub_frame = ttk.Frame(frame)
+        sub_frame.pack(fill=tk.X, padx=10, pady=2)
+
         self.lbl_global_risk = ttk.Label(
-            frame,
-            text="탈조 방지 모니터: 연속 RISK: [0/8] | 역대 최대 연속 RISK: [0] | 총 REJECT: [0회]",
+            sub_frame,
+            text="탈조 방지 모니터: 연속 RISK: [ 0/8] | 역대 최대 연속 RISK: [ 0] | 총 REJECT: [0회]",
             font=("Consolas", 10, "bold"),
             foreground="blue"
         )
-        self.lbl_global_risk.pack(anchor=tk.W, padx=10, pady=2)
+        self.lbl_global_risk.pack(side=tk.LEFT)
+
+        self.lbl_already = ttk.Label(
+            sub_frame,
+            text=" |  ALREADY 발생: 0회",
+            font=("Consolas", 10, "bold"),
+            foreground="#D9534F"
+        )
+        self.lbl_already.pack(side=tk.LEFT, padx=5)
+
+        self.btn_reset_already = ttk.Button(sub_frame, text="초기화")
+        self.btn_reset_already.pack(side=tk.LEFT, padx=5)
 
     def _build_zc_table_panel(self):
         frame = ttk.LabelFrame(self.root, text="스텝별 ZC 타이밍 분석 & 모터 위상 대칭성 (이상적 ZC위치 = 50.0%)")
         frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # 7개 컬럼으로 간소화 (글로벌 카운터는 상단 패널로 단일화)
         cols = (
             "step", "step_period", "offset_avg", "zc_duration", 
             "zc_center", "diff_us", "status"
@@ -82,8 +96,8 @@ class DashboardView:
         }
         
         widths = {
-            "step": 90, "step_period": 120, "offset_avg": 120, "zc_duration": 120,
-            "zc_center": 110, "diff_us": 110, "status": 100
+            "step": 90, "step_period": 130, "offset_avg": 130, "zc_duration": 130,
+            "zc_center": 120, "diff_us": 120, "status": 100
         }
 
         for c, text in headers.items():

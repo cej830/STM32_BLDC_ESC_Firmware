@@ -11,40 +11,38 @@ class BLDCApp:
         self.view = DashboardView(root)
         self.engine = TelemetryEngine()
 
-        # 기존 버튼 연결
         self.view.btn_connect.config(command=self._on_connect_clicked)
         self.view.btn_record.config(command=self._on_record_clicked)
         self.root.bind("<space>", lambda e: self._on_record_clicked())
 
-        # [신규] 100회전 시퀀스 저장 버튼 연결
         self.view.btn_save_seq.config(command=self._on_save_sequence_clicked)
-
         self.engine.on_saved_callback = self._on_csv_saved
 
-        # UI 갱신 타이머 시작 (10Hz)
+        self.view.btn_reset_already.config(command=self._on_reset_already_clicked)
+
         self._schedule_refresh()
 
-    
+    def _on_reset_already_clicked(self):
+        self.engine.reset_already_count()
+        self.view.append_log("ALREADY 카운터가 0으로 초기화되었습니다.")
+
     def _on_save_sequence_clicked(self):
         if not self.engine.is_running:
             return
-        # 상시 쌓여있던 100회전(최대 600행) 요약 데이터를 즉시 파일로 생성
         fname = self.engine.export_sequence_csv()
         if fname:
             self.view.append_log(f"100회전 시퀀스 요약본 저장 완료: {fname}")
         else:
             self.view.append_log("아직 수집된 클로즈루프 시퀀스 데이터가 부족합니다.")
-    
-    
+
     def _on_connect_clicked(self):
-        # 연결 시 두 버튼 모두 활성화
         if not self.engine.is_running:
             port = self.view.ent_port.get().strip()
             ok, msg = self.engine.connect(port)
             if ok:
                 self.view.btn_connect.config(text="연결 해제")
                 self.view.btn_record.config(state=tk.NORMAL)
-                self.view.btn_save_seq.config(state=tk.NORMAL)  # 활성화
+                self.view.btn_save_seq.config(state=tk.NORMAL)
                 self.view.append_log(f"[{port}] 시리얼 스트림 수신 시작")
             else:
                 messagebox.showerror("오류", f"포트 열기 실패: {msg}")
@@ -98,30 +96,34 @@ class BLDCApp:
         m_rpm = s.get("m_rpm", 0)
         zc_cycle_us = s.get("cycle_zc_us", 0)
 
+        al_cnt = s.get("already_count", 0)
+        self.view.lbl_already.config(text=f" |  ALREADY 발생: {al_cnt:,}회")
+
+        # 1. 스트림 유실 및 통신 현황
         self.view.lbl_stream.config(
             text=f"수신: {s['total_recv']}개 | 전체 유실률: {loss_all:4.2f}% (OL: {loss_ol:4.2f}% / CL: {loss_cl:4.2f}%) | "
                  f"평균 dt: {s['avg_dt']:4.1f}us | 스텝에러: {s['step_seq_err']}회"
         )
 
+        # 2. 모터 제어 상태 및 트리거 현황
         self.view.lbl_flags.config(
             text=f"모터 상태: CCR:[{curr_ccr:4d}] | M-RPM:[{m_rpm:5d} RPM] (전기각 E-RPM:{e_rpm:5d}, 360°ZC:{zc_cycle_us}us) | "
                  f"Step:[{s['curr_step']}] {s['curr_mode']} [{s['curr_zc_str']}] | "
-                 f"TIM침투(9998)={s['race_9998']} | 타임아웃(9999)={s['timeout_9999']}"
+                 f"TIM침투(9998)={s['race_9998']} | 타임아웃(9999)={s['timeout_9999']} | 강제정지(9997/9996)={s['risk_force_9997']}/{s['reject_force_9996']}"
         )
 
-        # [신규] 글로벌 리스크 레이블 갱신 (단 1개로 전체 상태 표시)
+        # 3. 단일 글로벌 리스크 상태
         g_streak = self.engine.analyzer.global_risk_streak
         g_max = self.engine.analyzer.global_max_risk_streak
         g_reject = self.engine.analyzer.global_reject_count
         
-        # 위험도에 따른 색상 변경
         streak_color = "red" if g_streak >= (config.REJECT_COUNT // 2) else ("darkorange" if g_streak > 0 else "blue")
         self.view.lbl_global_risk.config(
             text=f"탈조 방지 모니터: 연속 RISK: [{g_streak:2d}/{config.REJECT_COUNT}] | 역대 최대 연속 RISK: [{g_max:2d}] | 총 REJECT: [{g_reject}회]",
             foreground=streak_color
         )
 
-        # 스텝 1~6 테이블 갱신 (개별 streak 열 제거)
+        # 4. 스텝 1~6 테이블 갱신
         avg_p = self.engine.analyzer.avg_step_period
         for s_idx in range(1, 7):
             node = self.engine.analyzer.nodes[s_idx]
@@ -136,12 +138,12 @@ class BLDCApp:
                 str(s_idx),
                 values=(
                     f"Step {s_idx}",
-                    period_str,       # 스텝 총길이
-                    offset_str,       # 6스텝 평균 대비 편차
-                    dur_str,          # ZC 발생시간
-                    center_str,       # ZC 위치 (%)
-                    diff_us_str,      # 360도 전 대비 편차
-                    node.status       # VALID / RISK / REJECT
+                    period_str,
+                    offset_str,
+                    dur_str,
+                    center_str,
+                    diff_us_str,
+                    node.status
                 ),
                 tags=(node.status,)
             )

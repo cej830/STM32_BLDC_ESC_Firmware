@@ -63,12 +63,17 @@ class ZCStabilityAnalyzer:
         node = self.nodes[step]
         duration = diff_u16(t_zc, t_start)
 
-        # 1사이클(전기각 360도) ZC-to-ZC 주기 및 RPM 계산
         if step == 1:
             if self.last_cycle_t_zc is not None:
+                # 360도 전기각 1회전 순수 ZC 시간 (16비트 롤오버 보정)
                 self.cycle_zc_period_us = diff_u16(t_zc, self.last_cycle_t_zc)
-                if 1000 <= self.cycle_zc_period_us <= 60000:
+
+                # [수정] 최소 주기를 1000 -> 100으로 변경 (최대 600,000 E-RPM / 약 85,000 M-RPM까지 커버)
+                if 100 <= self.cycle_zc_period_us <= 60000:
+                    # 1. 순수 1사이클 ZC 기반 E-RPM
                     self.e_rpm = 60000000.0 / self.cycle_zc_period_us
+
+                    # 2. 극쌍 수(config.MOTOR_POLE_PAIRS = 7)를 반영한 기계적 M-RPM
                     self.m_rpm = self.e_rpm / config.MOTOR_POLE_PAIRS
 
             self.last_cycle_t_zc = t_zc

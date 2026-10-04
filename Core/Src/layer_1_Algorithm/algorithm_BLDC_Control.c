@@ -10,7 +10,7 @@
 
 
 #define MAX_TIME_OUT 				5000
-#define BLANKING_TIME 				30
+#define BLANKING_TIME 				20
 #define ISR_LATENCY					19
 
 #define VALID			100
@@ -64,6 +64,7 @@ static volatile MotorControl motorcontrol = {0};
 static volatile ZC_Management zc_manage = {0};
 static volatile ZC_History zc_history = {0};
 static volatile ZC_Over_cnt zc_over_cnt = {0};
+static volatile ZC_Valid_Status_t zc_valid_status = ZC_VALID;
 
 typedef struct
 {
@@ -82,9 +83,10 @@ static ZC_Check_t zc_check = {
 
 typedef enum
 {
-	ZC_ALREADY_OCCUR = 0,
+	ZC_NOT_YET = 0,
 	ZC_DETECTED,
-	ZC_NOT_YET
+	ZC_ALREADY_OCCUR,
+	ZC_PASS,
 }ZC_State_t;
 
 #define ZC_ALREADY_MARGIN 10
@@ -149,6 +151,8 @@ void Algo_BLDC_Startup()
 
 	zc_over_cnt.cnt_delay_over = 0;
 	zc_over_cnt.cnt_elapsed_over = 0;
+
+	zc_valid_status = ZC_VALID;
 
 	for(uint8_t i=0; i<6; i++)
 	{
@@ -238,17 +242,11 @@ uint8_t Algo_BLDC_RunOpenloop()
 
 static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motorlog_Temporary* tempor)
 {
-	uint8_t info = (uint8_t)(motorcontrol.step & 0x0F);
+	uint8_t info = 0;
 
-	if(motorcontrol.motorstate != OPEN_LOOP)
-	{
-		info |= (1U << 4);
-	}
-
-	if(tempor->log_zc_event)
-	{
-		info |= (1U << 5);
-	}
+	info |= (uint8_t)(motorcontrol.step & 0x0F);				//Bit [3:0] : step
+	info |= (uint8_t)((motorcontrol.motorstate & 0x03) << 4);	//Bit [5:4] : motor_state
+	info |= (uint8_t)((tempor->log_zc_event & 0x03) << 6);		//Bit [7:6] : zc_event
 
 	log->info = info;
 
@@ -314,13 +312,21 @@ uint16_t Get_Linear_ZC(uint16_t t_curr, uint16_t t_prev, int16_t BEMF_current, i
 }
 
 
-
 void Algo_BLDC_AdcISRCallback()
 {
 	GPIOC->BSRR = (1U << (14+16));
+
+	uint8_t is_first_CL = motorcontrol.motor_first_closeloop;
+
+	uint8_t is_searching = zc_manage.zc_searching;
+	uint8_t is_first_sample = zc_manage.zc_first_sample;
+
+	uint8_t step = motorcontrol.step;
+	uint16_t timestamp_start = zc_manage.timestamp_start;
+
 	//Get timestamp and Duration.
 	uint16_t timestamp_curr = Driver_Time_Get_Us();
-	uint16_t duration = (uint16_t)(timestamp_curr - zc_manage.timestamp_start);
+	uint16_t duration = (uint16_t)(timestamp_curr - timestamp_start);
 
 	//Block ADC value until step_duration is less than BLANKINGTIME
 	if(duration < BLANKING_TIME)
@@ -335,154 +341,172 @@ void Algo_BLDC_AdcISRCallback()
 	Driver_BLDC_HW_GetPhaseV(&PhaseA, &PhaseB, &PhaseC, &VCOM);
 	sw_VCOM = (uint16_t)(((uint32_t)PhaseA + (uint32_t)PhaseB + (uint32_t)PhaseC)/3);
 
-	int16_t BEMF_curr = Read_BEMF(motorcontrol.step, sw_VCOM);
+	int16_t BEMF_curr = Read_BEMF(step, sw_VCOM);
 
 	tempor.log_timestamp_curr = timestamp_curr;
 	tempor.log_BEMF_curr = BEMF_curr;
 
-	//ZC 감지 플래그가 true 일때
-	if(zc_manage.zc_searching == 1)
+	if(is_searching == 0)
 	{
-		if(duration > 60000)
-		{
-			// 디버깅 동안만 남길 수 있음
-			tempor.log_delay_trigger = 9998;
-			Packing_Motor_Log(&motor_log, &tempor);
-			motor_log.delay_PAR = zc_manage.CNT++;
-			Push_LogRingBuffer(&motor_log);
-			return;
-		}
-		//ZC 감지를 TIMEOUT 이내에 못하면 에러발생.
-		if(duration > MAX_TIME_OUT)
-		{
-			tempor.log_delay_trigger = 9999;
-			Packing_Motor_Log(&motor_log, &tempor);
-			motor_log.delay_PAR = zc_manage.CNT++;
-			Push_LogRingBuffer(&motor_log);
+		Packing_Motor_Log(&motor_log, &tempor);
+		motor_log.delay_PAR = zc_manage.CNT++;
+		Push_LogRingBuffer(&motor_log);
+		return;
+	}
 
+	//ZC 감지를 TIMEOUT 이내에 못하면 에러발생.
+	if(duration > MAX_TIME_OUT)
+	{
+		tempor.log_delay_trigger = 9999;
+		Packing_Motor_Log(&motor_log, &tempor);
+		motor_log.delay_PAR = zc_manage.CNT++;
+		Push_LogRingBuffer(&motor_log);
+
+		Driver_BLDC_HW_Stop();
+		motor_error = TIME_OUT;
+		return;
+	}
+
+	// searching == 1 일때, BEMF기반 ZC 계산 시작.
+
+	uint8_t idx = step-1;
+	uint16_t timestamp_zc;				//zc가 발생함 타임스탬프
+	uint16_t zc_duration;				//스텝 시작부터 zc 발생 까지의 시간 기록
+
+	ZC_State_t zc_event;
+	zc_event = is_ZeroCrossing_Occur(step, BEMF_curr, zc_history.BEMF_prev, is_first_sample);
+
+	if(zc_event == ZC_NOT_YET)
+	{
+		zc_manage.zc_first_sample = 0;
+		zc_history.BEMF_prev = BEMF_curr;
+		zc_history.timestamp_prev = timestamp_curr;
+
+		tempor.log_zc_event = zc_event;
+
+		Packing_Motor_Log(&motor_log, &tempor);
+		motor_log.delay_PAR = zc_manage.CNT++;
+		Push_LogRingBuffer(&motor_log);
+
+		return;
+	}
+
+	else if(zc_event == ZC_PASS)
+	{
+		tempor.log_zc_event = zc_event;
+		Packing_Motor_Log(&motor_log, &tempor);
+		motor_log.delay_PAR = zc_manage.CNT++;
+		Push_LogRingBuffer(&motor_log);
+		return;
+	}
+
+	else if(zc_event == ZC_DETECTED)
+	{
+		zc_check.cnt_zc_already = 0;
+		timestamp_zc = Get_Linear_ZC(timestamp_curr, zc_history.timestamp_prev, BEMF_curr, zc_history.BEMF_prev);
+		tempor.log_timestamp_zc = timestamp_zc;
+		zc_duration = (uint16_t)(timestamp_zc - timestamp_start);
+
+		uint16_t zc_duration_last = zc_check.duration_zc_last[idx];
+		zc_valid_status = Check_Valid_ZC(zc_duration_last, zc_duration);
+
+		if(zc_valid_status == ZC_REJECT)
+		{
 			Driver_BLDC_HW_Stop();
-			motor_error = TIME_OUT;
+			motor_error = ZC_REJECTED;
+			tempor.log_delay_trigger = 9997;
+			Packing_Motor_Log(&motor_log, &tempor);
+			motor_log.delay_PAR = zc_manage.CNT++;
+			Push_LogRingBuffer(&motor_log);
 			return;
 		}
 
-		ZC_State_t zc_event;
-		zc_event = is_ZeroCrossing_Occur(motorcontrol.step, BEMF_curr, zc_history.BEMF_prev,zc_manage.zc_first_sample);
+		zc_check.duration_zc_last[idx] = zc_duration;
+	}
 
-		if(zc_event != ZC_NOT_YET)	//ZC가 발생한 경우
+	else if(zc_event == ZC_ALREADY_OCCUR)
+	{
+		zc_check.cnt_zc_already++;
+		uint16_t zc_duration_last = zc_check.duration_zc_last[idx];
+
+		if(zc_duration_last > duration)
 		{
-			uint8_t idx = motorcontrol.step-1;
-			uint16_t timestamp_zc;				//zc가 발생함 타임스탬프
-			uint16_t zc_duration;				//스텝 시작부터 zc 발생 까지의 시간 기록
+			zc_over_cnt.cnt_predict_over++;
+			zc_duration = duration;
+		}
+		else
+		{
+			zc_duration = zc_duration_last;
+		}
 
-			if(zc_event == ZC_DETECTED)	//ZC 검출 성공
-			{
-				zc_check.cnt_zc_already = 0;
+		timestamp_zc = (uint16_t)(timestamp_start + zc_duration);
+		tempor.log_timestamp_zc = timestamp_zc;
 
-				timestamp_zc = Get_Linear_ZC(timestamp_curr, zc_history.timestamp_prev, BEMF_curr, zc_history.BEMF_prev);
-				tempor.log_timestamp_zc = timestamp_zc;
-				zc_duration = (uint16_t)(timestamp_zc - zc_manage.timestamp_start);
-
-				uint16_t zc_duration_last = zc_check.duration_zc_last[idx];
-				ZC_Valid_Status_t zc_valid_status = Check_Valid_ZC(zc_duration_last, zc_duration);
-
-				if(zc_valid_status == ZC_REJECT)
-				{
-					Driver_BLDC_HW_Stop();
-					motor_error = ZC_REJECTED;
-					tempor.log_delay_trigger = 9997;
-					Packing_Motor_Log(&motor_log, &tempor);
-					motor_log.delay_PAR = zc_manage.CNT++;
-					Push_LogRingBuffer(&motor_log);
-					return;
-				}
-
-				zc_check.duration_zc_last[idx] = zc_duration;
-			}
-
-			else if(zc_event == ZC_ALREADY_OCCUR)
-			{
-				zc_check.cnt_zc_already++;
-
-				uint16_t zc_duration_last = zc_check.duration_zc_last[idx];
-				if(zc_duration_last > duration)		//zc_duration = min(previous_zc_duration, current_elapsed_duration)
-				{
-					zc_over_cnt.cnt_predict_over++;
-					zc_duration = duration;
-				}
-				else
-				{
-					zc_duration = zc_duration_last;
-				}
-
-				timestamp_zc = (uint16_t)(zc_manage.timestamp_start + zc_duration);
-				tempor.log_timestamp_zc = timestamp_zc;
-
-				if(zc_check.cnt_zc_already >= MAX_CNT_ALREADY)
-				{
-					Driver_BLDC_HW_Stop();
-					motor_error = ZC_REJECTED;
-					tempor.log_delay_trigger = 9996;
-					Packing_Motor_Log(&motor_log, &tempor);
-					motor_log.delay_PAR = zc_manage.CNT++;
-					Push_LogRingBuffer(&motor_log);
-					return;
-				}
-			}
-
-			//ZC-to-ZC 60도 로부터 30도 target delay 계산
-			uint16_t target_delay = cal_Edgree_Delay_time(timestamp_zc, zc_history.timestamp_last_zc, zc_duration, motorcontrol.motor_first_closeloop);
-
-			//4. 레이트 리미터(PAR) 적용하여 급격한 delay 변화 안정화
-			zc_history.current_delay = Get_Actual_Delaytime(zc_history.current_delay, target_delay, PAR, motorcontrol.motor_first_closeloop);
-
-			//5. zc 이후 지금까지 흘러간 시간 duration 계산
-			uint16_t elapsed_since_zc = (uint16_t)(timestamp_curr - timestamp_zc);
-			if(elapsed_since_zc > 100)
-			{
-				elapsed_since_zc = 0;
-				zc_over_cnt.cnt_elapsed_over++;
-			}
-
-			//6. 타이머에 트리거할 30도 딜레이 시간을 계산.
-			uint16_t delay_time = 1;
-			//uint16_t delay_time = zc_history.current_delay - elapsed_since_zc;
-
-			uint16_t total_elapsed = elapsed_since_zc + ISR_LATENCY;
-			if(zc_history.current_delay > total_elapsed)
-			{
-				delay_time = zc_history.current_delay - total_elapsed;
-			}
-
-			else
-			{
-				delay_time = 1;
-				zc_over_cnt.cnt_delay_over++;
-			}
-
-			//로그 기록, 지역변수 값들
-			tempor.log_zc_event = zc_event;
-			tempor.log_delay_target = target_delay;
-			tempor.log_delay_limited = zc_history.current_delay;
-			tempor.log_delay_trigger = delay_time;
-
-			//상태(플래그) 명시적 업데이트
-			motorcontrol.motor_first_closeloop = 0;
-			zc_history.timestamp_last_zc = timestamp_zc;
-			zc_manage.zc_searching = 0;
-
-			//TIM3로 전기각 30도 대기시간 트리거
-			Driver_BLDC_HW_SetTimTrig(delay_time);
+		if(zc_check.cnt_zc_already >= MAX_CNT_ALREADY)
+		{
+			Driver_BLDC_HW_Stop();
+			motor_error = ZC_REJECTED;
+			tempor.log_delay_trigger = 9996;
+			Packing_Motor_Log(&motor_log, &tempor);
+			motor_log.delay_PAR = zc_manage.CNT++;
+			Push_LogRingBuffer(&motor_log);
+			return;
 		}
 	}
 
-	Packing_Motor_Log(&motor_log, &tempor);
-	motor_log.delay_PAR = zc_manage.CNT++;
-	Push_LogRingBuffer(&motor_log);
+
+	//ZC-to-ZC 60도 로부터 30도 target delay 계산
+	uint16_t target_delay = cal_Edgree_Delay_time(timestamp_zc, zc_history.timestamp_last_zc, zc_duration, is_first_CL);
+
+	//4. 레이트 리미터(PAR) 적용하여 급격한 delay 변화 안정화
+	zc_history.current_delay = Get_Actual_Delaytime(zc_history.current_delay, target_delay, PAR, is_first_CL);
+
+	//5. zc 이후 지금까지 흘러간 시간 duration 계산
+	uint16_t elapsed_since_zc = (uint16_t)(timestamp_curr - timestamp_zc);
+	if(elapsed_since_zc > 100)
+	{
+		elapsed_since_zc = 0;
+		zc_over_cnt.cnt_elapsed_over++;
+	}
+
+	//6. 타이머에 트리거할 30도 딜레이 시간을 계산.
+	uint16_t delay_time = 1;
+	//uint16_t delay_time = zc_history.current_delay - elapsed_since_zc;
+
+	uint16_t total_elapsed = elapsed_since_zc + ISR_LATENCY;
+	if(zc_history.current_delay > total_elapsed)
+	{
+		delay_time = zc_history.current_delay - total_elapsed;
+	}
+
+	else
+	{
+		delay_time = 1;
+		zc_over_cnt.cnt_delay_over++;
+	}
+
+	//로그 기록, 지역변수 값들
+	tempor.log_zc_event = zc_event;
+	tempor.log_delay_target = target_delay;
+	tempor.log_delay_limited = zc_history.current_delay;
+	tempor.log_delay_trigger = delay_time;
+
+	//상태(플래그) 명시적 업데이트
+	motorcontrol.motor_first_closeloop = 0;
+	zc_history.timestamp_last_zc = timestamp_zc;
+	zc_manage.zc_searching = 0;
 
 	//플래그 명시적 업데이트 & last값 갱신.
 	zc_manage.zc_first_sample = 0;
 	zc_history.BEMF_prev = BEMF_curr;
 	zc_history.timestamp_prev = timestamp_curr;
+
+	//TIM3로 전기각 30도 대기시간 트리거
+	Driver_BLDC_HW_SetTimTrig(delay_time);
+
+	Packing_Motor_Log(&motor_log, &tempor);
+	motor_log.delay_PAR = zc_manage.CNT++;
+	Push_LogRingBuffer(&motor_log);
 }
 
 
@@ -511,11 +535,11 @@ void Algo_BLDC_TimISRCallback()
 		}
 
 		//target_CCR = Get_Target_CCR();		//포텐셔미터의 서비스 함수
-		if((motorcontrol.CCR < motorcontrol.target_CCR))
+		if((motorcontrol.CCR < motorcontrol.target_CCR) && (zc_valid_status == ZC_VALID))
 		{
 			motorcontrol.CCR++;
 		}
-		else if (motorcontrol.CCR > motorcontrol.target_CCR)
+		else if (motorcontrol.CCR > motorcontrol.target_CCR && (zc_valid_status == ZC_VALID))
 		{
 			motorcontrol.CCR--;
 		}
@@ -686,20 +710,37 @@ static inline ZC_State_t is_ZeroCrossing_Occur(uint8_t step , int16_t BEMF_curr,
 			return ZC_NOT_YET;
 		}
 
-
 		// 첫 샘플에서 라이징 엣지 검출전에 먼저 + 가 검출 되면, ZC는 이미 발생했다고 본다.
-		if((step == 2 || step == 4 || step == 6) && (BEMF_curr > ZC_ALREADY_MARGIN))
+		if( step == 2 || step == 4 || step == 6)
 		{
-			return ZC_ALREADY_OCCUR;
+			if(BEMF_curr > ZC_ALREADY_MARGIN)
+			{
+				return ZC_ALREADY_OCCUR;
+			}
+
+			if(BEMF_curr > 0)
+			{
+				return ZC_PASS;		//+1 ~ +MARGIN
+			}
+
+			return ZC_NOT_YET;
 		}
 
 		// 첫 샘플에서 폴링 엣지 검출전에 먼저 - 가 검출 되면, ZC는 이미 발생했다고 본다.
-		if((step == 1 || step == 3 || step == 5) && (BEMF_curr < -ZC_ALREADY_MARGIN))
+		if( step == 1 || step == 3 || step == 5 )
 		{
-			return ZC_ALREADY_OCCUR;
-		}
+			if(BEMF_curr < -ZC_ALREADY_MARGIN)
+			{
+				return ZC_ALREADY_OCCUR;
+			}
 
-		return ZC_NOT_YET;
+			if(BEMF_curr < 0)
+			{
+				return ZC_PASS;
+			}
+
+			return ZC_NOT_YET;
+		}
 	}
 
 	switch (step)
