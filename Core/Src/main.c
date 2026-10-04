@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
-#include "usbd_cdc_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -122,7 +121,6 @@ int main(void)
   MX_TIM3_Init();
   MX_ADC2_Init();
 
-
   /* USER CODE BEGIN 2 */
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -157,6 +155,7 @@ int main(void)
   Service_Init_UART();
 
   HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 3, 0);
+
 
   HAL_Delay(30);
   /* USER CODE END 2 */

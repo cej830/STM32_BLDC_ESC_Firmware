@@ -36,6 +36,9 @@ void Driver_BLDC_HW_SetTimTrig(uint16_t time_us);
 void Driver_BLDC_HW_SetTim3OFF();
 void Driver_BLDC_HW_GetPhaseV(volatile uint16_t* A, volatile uint16_t* B, volatile uint16_t* C , volatile uint16_t* VCOM);
 
+void Driver_BLDC_HW_SetLowSide_Flat();
+void Driver_BLDC_HW_SetHighSide_Flat();
+
 //BLDC 외부 비교기 활용 센서리스 제어 알고리즘 관련 HW 레지스터 조작
 void Driver_BLDC_HW_SetTIM2_InputCapture_Direction(uint8_t channel, uint8_t edge);
 void Driver_BLDC_HW_Set_InputCapture_Enable(uint8_t channel);

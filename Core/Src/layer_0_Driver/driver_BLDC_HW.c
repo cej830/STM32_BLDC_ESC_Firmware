@@ -62,6 +62,15 @@ void Driver_BLDC_HW_Startup()
 	TIM3->SR &= ~TIM_SR_UIF;		//타이머3 인터럽트 팬딩 클리어
 }
 
+void Driver_BLDC_HW_SetLowSide_Flat()
+{
+	TIM1->CCR4 = (TIM1->ARR)-1;
+}
+
+void Driver_BLDC_HW_SetHighSide_Flat()
+{
+	TIM1->CCR4 = 1;
+}
 
 void Driver_BLDC_HW_Stop()
 {

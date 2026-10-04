@@ -250,6 +250,7 @@ void TIM1_CC_IRQHandler(void)
 	if(TIM1->SR & TIM_SR_CC4IF_Msk)
 	{
 		TIM1->SR &= ~TIM_SR_CC4IF_Msk;
+		GPIOC->BSRR = (1U << 14);
 
 	}
   /* USER CODE END TIM1_CC_IRQn 1 */

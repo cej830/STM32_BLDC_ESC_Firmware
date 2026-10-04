@@ -20,7 +20,7 @@
 
 #include "main.h"
 
-
+extern  TIM_HandleTypeDef htim1;
 #define MAX_BUFF	200
 
 
@@ -55,6 +55,7 @@ void Service_BLDC_Run()
     		ClearError();
     		Algo_BLDC_Startup();	//플래그 변수들을 처음으로 초기화. 스텝1으로 정렬.
     		HAL_Delay(100);			//정렬후 대기.
+    		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_4);
     		motor_state = MOTOR_RUN_OPENLOOP;
     		break;
 
@@ -76,6 +77,8 @@ void Service_BLDC_Run()
     	case MOTOR_STOP:
     		print_flag = 1;
     		Driver_BLDC_HW_Stop();
+    		HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_4);
+    		GPIOC->BSRR = (1U << (14+16));
 
     		motor_state = MOTOR_IDLE;
     		break;

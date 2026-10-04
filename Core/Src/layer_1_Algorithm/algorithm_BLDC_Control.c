@@ -10,10 +10,11 @@
 
 
 #define MAX_TIME_OUT 				5000
-#define BLANKING_TIME 				50
+#define BLANKING_TIME 				30
 #define ISR_LATENCY					19
 
 #define VALID			100
+#define REJECT			600
 #define MAX_RISK_CNT	8
 
 
@@ -57,6 +58,7 @@ static volatile uint16_t sw_VCOM;
 
 static volatile MotorError_t motor_error = NO_ERROR;
 
+static SAMPLE_MODE sample_mode = LOWSIDE_SAMPLE;
 
 static volatile MotorControl motorcontrol = {0};
 static volatile ZC_Management zc_manage = {0};
@@ -116,6 +118,8 @@ void Algo_BLDC_Init()
 void Algo_BLDC_Startup()
 {
 	Driver_BLDC_HW_Startup();
+	Driver_BLDC_HW_SetLowSide_Flat();
+	sample_mode = LOWSIDE_SAMPLE;
 
 	zc_manage.zc_searching = 0;			//ZC계산분기 ADC 플래그 RESET
 	zc_manage.zc_first_sample = 0;
@@ -298,6 +302,7 @@ uint16_t Get_Linear_ZC(uint16_t t_curr, uint16_t t_prev, int16_t BEMF_current, i
 
 void Algo_BLDC_AdcISRCallback()
 {
+	GPIOC->BSRR = (1U << (14+16));
 	//Get timestamp and Duration.
 	uint16_t timestamp_curr = Driver_Time_Get_Us();
 	uint16_t duration = (uint16_t)(timestamp_curr - zc_manage.timestamp_start);
@@ -469,8 +474,38 @@ void Algo_BLDC_TimISRCallback()
 		}
 	}
 
+
+
+	if(motorcontrol.CCR >= 900)
+	{
+		if(sample_mode != HIGHSIDE_SAMPLE)
+		{
+			sample_mode = HIGHSIDE_SAMPLE;
+			Driver_BLDC_HW_SetHighSide_Flat();
+		}
+	}
+
+	else
+	{
+		if(sample_mode != LOWSIDE_SAMPLE)
+		{
+			sample_mode = LOWSIDE_SAMPLE;
+			Driver_BLDC_HW_SetLowSide_Flat();
+		}
+	}
+
+
+
 	sixstep(motorcontrol.step, motorcontrol.CCR);
 
+	if(motorcontrol.step == 1)
+	{
+		GPIOC->BSRR = (1U<<13);
+	}
+	else
+	{
+		GPIOC->BSRR = (1U << (13+16));
+	}
 	zc_manage.timestamp_start = Driver_Time_Get_Us();
 	zc_manage.zc_searching = 1;
 	zc_manage.zc_first_sample = 1;
@@ -504,7 +539,7 @@ ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration)
 		return ZC_VALID;
 	}
 
-	else
+	else if(diff <= REJECT)
 	{
 		zc_check.cnt_risk++;
 		if(zc_check.cnt_risk >= MAX_RISK_CNT)
@@ -515,6 +550,11 @@ ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration)
 		{
 			return ZC_RISK;
 		}
+	}
+
+	else
+	{
+		return ZC_REJECT;
 	}
 }
 /* 레이트 리미터: 목표 딜레이로 점진적 수렴 */

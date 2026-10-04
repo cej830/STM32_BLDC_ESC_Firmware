@@ -103,6 +103,13 @@ typedef struct
 }ZC_Over_cnt;
 
 
+typedef enum
+{
+	LOWSIDE_SAMPLE,
+	HIGHSIDE_SAMPLE
+}SAMPLE_MODE;
+
+
 void ClearError();
 MotorError_t Get_ErrorCode();
 
