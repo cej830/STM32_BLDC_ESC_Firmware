@@ -40,7 +40,8 @@ typedef enum
 typedef enum
 {
 	OPEN_LOOP = 0,
-	CLOSE_LOOP
+	CLOSE_LOOP,
+	CLOSE_LOCKIN
 }MotorStatus_t;
 
 
@@ -60,6 +61,7 @@ typedef struct
 	uint16_t target_CCR;
 	uint16_t CCR;					//current CCR
 	uint8_t motor_first_closeloop;	//falg, 첫번째 클로즈루프인지, 0: NO, 1: YES
+	uint8_t cnt_cycle;
 }MotorControl;
 
 typedef struct
@@ -100,6 +102,7 @@ typedef struct
 {
 	uint16_t cnt_delay_over;
 	uint16_t cnt_elapsed_over;
+	uint16_t cnt_predict_over;
 }ZC_Over_cnt;
 
 
