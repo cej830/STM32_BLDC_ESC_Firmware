@@ -64,6 +64,20 @@ class DashboardView:
         )
         self.lbl_global_risk.pack(side=tk.LEFT)
 
+        diag_frame = ttk.Frame(frame)
+        diag_frame.pack(fill=tk.X, padx=10, pady=2)
+
+        self.lbl_zc_quality = ttk.Label(
+            diag_frame,
+            text="ESC 센싱 진단: 평가수: 0회 | 정상 검출(DETECT): 0.0% | 조기 교차(ALREADY): 0.0% | 데드밴드(PASS): 0.0%",
+            font=("Consolas", 10, "bold"),
+            foreground="#8A2BE2"
+        )
+        self.lbl_zc_quality.pack(side=tk.LEFT)
+
+        self.btn_reset_quality = ttk.Button(diag_frame, text="비율 초기화")
+        self.btn_reset_quality.pack(side=tk.LEFT, padx=10)
+
         self.lbl_already = ttk.Label(
             sub_frame,
             text=" |  ALREADY 발생: 0회",

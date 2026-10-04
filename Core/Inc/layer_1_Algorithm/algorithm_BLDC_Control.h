@@ -53,6 +53,13 @@ typedef enum
 }ZC_Valid_Status_t;
 
 
+typedef enum
+{
+	IDLE = 0,
+	FOLLOWER,
+	FIXED
+}CCR_State_t;
+
 //모터 관리 변수 구조체, TIM3 ISR
 typedef struct
 {
@@ -62,6 +69,7 @@ typedef struct
 	uint16_t CCR;					//current CCR
 	uint8_t motor_first_closeloop;	//falg, 첫번째 클로즈루프인지, 0: NO, 1: YES
 	uint8_t cnt_cycle;
+	CCR_State_t ccr_state;
 }MotorControl;
 
 typedef struct

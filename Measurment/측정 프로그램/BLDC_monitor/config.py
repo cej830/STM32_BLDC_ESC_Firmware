@@ -9,8 +9,8 @@ ROLLING_BUFFER_LEN = 600  # 최근 유지할 최대 샘플 수
 # ==========================================
 # zc_duration (t_zc - t_start) 판정 임계치
 # ==========================================
-LIMIT_US_VALID = 100        # 40us 이하 편차 -> VALID
-LIMIT_US_RISK = 150         # 90us 이하 편차 -> RISK (초과시 REJECT)
+LIMIT_US_VALID = 100        # 이하 편차 -> VALID
+LIMIT_US_RISK = 500         # 이상 -> 바로 REJECT 
 
 # RISK가 연속 몇 회 터져야 REJECT 1회로 판정할 것인가
 REJECT_COUNT = 8             # 연속 5회 초과 시 REJECT 발생

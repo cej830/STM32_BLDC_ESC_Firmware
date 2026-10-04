@@ -117,6 +117,7 @@ MxCube.Version=6.18.1
 MxDb.Version=DB.6.0.181
 NVIC.ADC1_2_IRQn=true\:2\:0\:true\:false\:true\:true\:false\:true
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
+NVIC.DMA1_Channel1_IRQn=true\:3\:0\:true\:false\:true\:true\:true\:true
 NVIC.DebugMonitor_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 NVIC.EXTI15_10_IRQn=true\:3\:0\:true\:false\:true\:true\:false\:true
 NVIC.ForceEnableDMAVector=false

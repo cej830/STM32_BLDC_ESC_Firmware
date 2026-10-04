@@ -20,8 +20,15 @@ class BLDCApp:
 
         self.view.btn_reset_already.config(command=self._on_reset_already_clicked)
 
+        self.view.btn_reset_quality.config(command=self._on_reset_quality_clicked)
+
         self._schedule_refresh()
 
+    def _on_reset_quality_clicked(self):
+        self.engine.reset_zc_quality_stats()
+        self.view.append_log("ZC 이벤트 비율 통계가 초기화되었습니다.")
+    
+    
     def _on_reset_already_clicked(self):
         self.engine.reset_already_count()
         self.view.append_log("ALREADY 카운터가 0으로 초기화되었습니다.")
@@ -98,6 +105,19 @@ class BLDCApp:
 
         al_cnt = s.get("already_count", 0)
         self.view.lbl_already.config(text=f" |  ALREADY 발생: {al_cnt:,}회")
+
+        q = self.engine.zc_quality_stats
+        p_det = q["pct_detected"]
+        p_alr = q["pct_already"]
+        p_pas = q["pct_pass"]
+        total_eval = q["total_eval"]
+
+        # ALREADY 비율이 30%를 넘으면 샘플링 속도 한계 경고 (빨간색)
+        color = "red" if p_alr >= 30.0 else ("darkorange" if p_alr >= 10.0 else "#8A2BE2")
+        self.view.lbl_zc_quality.config(
+            text=f"ESC 센싱 진단: 평가수: {total_eval:,}회 | 정상(DETECT): {p_det:4.1f}% | 조기통과(ALREADY): {p_alr:4.1f}% | 데드밴드(PASS): {p_pas:4.1f}%",
+            foreground=color
+        )
 
         # 1. 스트림 유실 및 통신 현황
         self.view.lbl_stream.config(

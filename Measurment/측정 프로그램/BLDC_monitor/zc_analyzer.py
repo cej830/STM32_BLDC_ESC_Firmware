@@ -41,11 +41,12 @@ class ZCStabilityAnalyzer:
             prev_node = self.nodes[self.last_step_num]
             if prev_node.last_t_start is not None:
                 period = diff_u16(t_start, prev_node.last_t_start)
-                if 200 <= period <= 30000:
+                
+                # [수정] 고속 회전 대응: 최소 40 us 이상이면 정상 스텝 주기로 인정
+                if 40 <= period <= 30000:
                     prev_node.step_period = period
-                    if prev_node.curr_duration is not None and prev_node.curr_duration > 0:
-                        prev_node.zc_pos_pct = (prev_node.curr_duration / period) * 100.0
 
+            # 6개 스텝 평균 주기 계산
             valid_periods = [self.nodes[s].step_period for s in range(1, 7) if self.nodes[s].step_period > 0]
             if len(valid_periods) == 6:
                 self.avg_step_period = sum(valid_periods) / 6.0
@@ -62,6 +63,8 @@ class ZCStabilityAnalyzer:
 
         node = self.nodes[step]
         duration = diff_u16(t_zc, t_start)
+        if node.step_period > 0:
+            node.zc_pos_pct = (duration / node.step_period) * 100.0
 
         if step == 1:
             if self.last_cycle_t_zc is not None:

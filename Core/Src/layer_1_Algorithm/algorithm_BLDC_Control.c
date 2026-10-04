@@ -7,6 +7,7 @@
 
 
 #include "layer_1_Algorithm/algorithm_BLDC_Control.h"
+#include "layer_1_Algorithm/algorithm_ADC_Control.h"
 
 
 #define MAX_TIME_OUT 				5000
@@ -14,7 +15,7 @@
 #define ISR_LATENCY					19
 
 #define VALID			100
-#define REJECT			1000
+#define REJECT			500
 #define MAX_RISK_CNT	8
 
 
@@ -142,6 +143,7 @@ void Algo_BLDC_Startup()
 	motorcontrol.motor_first_closeloop = 0;
 	motorcontrol.motorstate = OPEN_LOOP;
 	motorcontrol.cnt_cycle = 0;
+	motorcontrol.ccr_state = IDLE;
 	OpenLoop_count = 0;
 	OpenLoop_delay_us = START_OPEN_LOOP_DELAY;
 
@@ -534,34 +536,56 @@ void Algo_BLDC_TimISRCallback()
 			}
 		}
 
-		//target_CCR = Get_Target_CCR();		//포텐셔미터의 서비스 함수
-		if((motorcontrol.CCR < motorcontrol.target_CCR) && (zc_valid_status == ZC_VALID))
+		uint16_t target_CCR = Get_Target_Value();//포텐셔미터의 서비스 함수
+
+		if(motorcontrol.motorstate == CLOSE_LOCKIN)
 		{
-			motorcontrol.CCR++;
-		}
-		else if (motorcontrol.CCR > motorcontrol.target_CCR && (zc_valid_status == ZC_VALID))
-		{
-			motorcontrol.CCR--;
+			if(motorcontrol.ccr_state == IDLE)
+			{
+				if(target_CCR <= 225)
+				{
+					motorcontrol.ccr_state = FOLLOWER;
+				}
+			}
+
+			if(motorcontrol.ccr_state == FOLLOWER)
+			{
+				motorcontrol.target_CCR = target_CCR;
+			}
+
+			if (zc_valid_status == ZC_VALID)
+			{
+				if(motorcontrol.CCR < motorcontrol.target_CCR)
+				{
+					motorcontrol.CCR ++;
+				}
+
+				else if(motorcontrol.CCR > motorcontrol.target_CCR)
+				{
+					motorcontrol.CCR--;
+				}
+			}
+
+			if(motorcontrol.CCR >= 900)
+			{
+				if(sample_mode != HIGHSIDE_SAMPLE)
+				{
+					sample_mode = HIGHSIDE_SAMPLE;
+					Driver_BLDC_HW_SetHighSide_Flat();
+				}
+			}
+
+			else
+			{
+				if(sample_mode != LOWSIDE_SAMPLE)
+				{
+					sample_mode = LOWSIDE_SAMPLE;
+					Driver_BLDC_HW_SetLowSide_Flat();
+				}
+			}
 		}
 	}
 
-	if(motorcontrol.CCR >= 900)
-	{
-		if(sample_mode != HIGHSIDE_SAMPLE)
-		{
-			sample_mode = HIGHSIDE_SAMPLE;
-			Driver_BLDC_HW_SetHighSide_Flat();
-		}
-	}
-
-	else
-	{
-		if(sample_mode != LOWSIDE_SAMPLE)
-		{
-			sample_mode = LOWSIDE_SAMPLE;
-			Driver_BLDC_HW_SetLowSide_Flat();
-		}
-	}
 
 	sixstep(motorcontrol.step, motorcontrol.CCR);
 

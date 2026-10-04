@@ -30,6 +30,7 @@
 #include <layer_0_Driver/driver_UART.h>
 
 #include <layer_1_Algorithm/algorithm_BLDC_Control.h>
+#include <layer_1_Algorithm/algorithm_ADC_Control.h>
 
 #include <layer_2_Service/service_BLDC.h>
 #include <layer_2_Service/service_UART.h>
@@ -150,11 +151,13 @@ int main(void)
   Driver_BLDC_HW_Init();
 
   Algo_BLDC_Init();
+  Robust_Static_Init(220);
 
   Service_BLDC_Init();
   Service_Init_UART();
 
   HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 3, 0);
+
 
 
   HAL_Delay(30);
@@ -170,6 +173,8 @@ int main(void)
 	//Service_UART_RunCLI();
  	Service_BLDC_Run();
  	Service_Telemetry_Run();
+ 	Polling_Conversion_Target();
+
   }
   /* USER CODE END 3 */
 }
@@ -607,6 +612,11 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
 

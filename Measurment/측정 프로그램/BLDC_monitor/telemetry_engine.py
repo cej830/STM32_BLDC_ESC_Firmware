@@ -57,6 +57,20 @@ class TelemetryEngine:
             "filtered_e_rpm": 0.0
         }
 
+
+        self.zc_quality_stats = {
+            "total_eval": 0,
+            "detected_cnt": 0,
+            "already_cnt": 0,
+            "pass_cnt": 0,
+            "pct_detected": 0.0,
+            "pct_already": 0.0,
+            "pct_pass": 0.0
+        }
+
+        # CCR 구간별(200단위 윈도우) 통계: {ccr_bucket: [total, detected, already, pass]}
+        self.ccr_quality_buckets = {}
+
         self._last_seq = None
         self._last_t_curr = None
         self._last_bemf = None
@@ -65,6 +79,19 @@ class TelemetryEngine:
 
     def reset_already_count(self):
         self.stats["already_count"] = 0
+
+    def reset_zc_quality_stats(self):
+        """이벤트 품질 통계 초기화"""
+        self.zc_quality_stats = {
+            "total_eval": 0,
+            "detected_cnt": 0,
+            "already_cnt": 0,
+            "pass_cnt": 0,
+            "pct_detected": 0.0,
+            "pct_already": 0.0,
+            "pct_pass": 0.0
+        }
+        self.ccr_quality_buckets.clear()
 
     def connect(self, port):
         try:
@@ -150,6 +177,7 @@ class TelemetryEngine:
         motor_state = pkt["motor_state_raw"]
         zc_event = pkt["zc_event"]
         trigger = pkt["delay_trigger"]
+        ccr = pkt["ccr"]
 
         if zc_event == 2:
             self.stats["already_count"] += 1
@@ -161,6 +189,34 @@ class TelemetryEngine:
             self.stats["recv_cl"] += 1
         else:
             self.stats["recv_ol"] += 1
+
+        if is_cl and zc_event in (1, 2, 3):
+            # 1. 전체 누적 통계
+            q = self.zc_quality_stats
+            q["total_eval"] += 1
+            if zc_event == 1:
+                q["detected_cnt"] += 1
+            elif zc_event == 2:
+                q["already_cnt"] += 1
+                self.stats["already_count"] += 1
+            elif zc_event == 3:
+                q["pass_cnt"] += 1
+
+            if q["total_eval"] > 0:
+                q["pct_detected"] = (q["detected_cnt"] / q["total_eval"]) * 100.0
+                q["pct_already"] = (q["already_cnt"] / q["total_eval"]) * 100.0
+                q["pct_pass"] = (q["pass_cnt"] / q["total_eval"]) * 100.0
+
+            # 2. CCR 구간별(200 단위) 세부 통계
+            bucket = (ccr // 200) * 200
+            if bucket not in self.ccr_quality_buckets:
+                # [total, detected, already, pass]
+                self.ccr_quality_buckets[bucket] = [0, 0, 0, 0]
+            
+            b = self.ccr_quality_buckets[bucket]
+            b[0] += 1
+            b[zc_event] += 1
+
 
         # 특수 인터럽트/트리거 플래그 집계
         if trigger == TRIGGER_TIMEOUT_FORCE:
@@ -212,6 +268,7 @@ class TelemetryEngine:
                     "zc_event": pkt["zc_event_str"],
                     "e_rpm": int(self.analyzer.e_rpm),
                     "m_rpm": int(self.analyzer.m_rpm),
+                    "already_pct": round(self.zc_quality_stats["pct_already"], 1),
                     "cycle_zc_us": self.analyzer.cycle_zc_period_us,
                     "step_period_us": node.step_period,
                     "offset_avg_us": node.period_offset_us,

@@ -30,3 +30,5 @@ void Driver_Pot_SysTick_callback()
 {
 	ADC1->CR2 |=  ADC_CR2_SWSTART;	//DMA 변환 시작, SW트리거.
 }
+
+
