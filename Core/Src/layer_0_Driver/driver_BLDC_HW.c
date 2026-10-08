@@ -19,7 +19,7 @@ void Driver_BLDC_HW_SetTim3OFF();
 void ADC_Handler();
 void TIM3_IRQ_Handler();
 
-void Driver_BLDC_HW_GetPhaseV(volatile uint16_t* A, volatile uint16_t* B, volatile uint16_t* C , volatile uint16_t* VCOM);
+void Driver_BLDC_HW_GetPhaseV(uint16_t* A,  uint16_t* B, uint16_t* C );
 
 //------ADC ISR, TIM3 ISR 에서 사용
 static Callbackfunc ADC_ISR_Callback = NULL;
@@ -103,12 +103,11 @@ void Driver_BLDC_HW_SetTim3OFF()
 	TIM3->CNT = 0;				//CNT값 초기화
 }
 
-void Driver_BLDC_HW_GetPhaseV(volatile uint16_t* A, volatile uint16_t* B, volatile uint16_t* C , volatile uint16_t* VCOM)
+void Driver_BLDC_HW_GetPhaseV(uint16_t* A, uint16_t* B, uint16_t* C )
 {
 	*A = ADC1->JDR1;
 	*B = ADC1->JDR2;
 	*C = ADC1->JDR3;
-	*VCOM = ADC1->JDR4;
 }
 
 
@@ -123,93 +122,21 @@ void ADC_IRQ_Handler()
 }
 
 
-void Driver_BLDC_HW_Set_InputCapture_Disable()
+void TIM3_IRQ_Handler()
 {
-	//인터럽트 비활성화.
-	TIM2->DIER &= ~TIM_DIER_CC1IE;
-	TIM2->DIER &= ~TIM_DIER_CC2IE;
-	TIM2->DIER &= ~TIM_DIER_CC3IE;
-
-	//인풋 캡쳐 비활성화.
-	TIM2->CCER &= ~TIM_CCER_CC1E;	//CH1 인풋캡쳐 모드 끄기
-	TIM2->CCER &= ~TIM_CCER_CC2E;	//CH2 인풋캡쳐 모드 끄기
-	TIM2->CCER &= ~TIM_CCER_CC3E;	//CH3 인풋캡쳐 모드 끄기
-}
-
-
-/* 라이징 엣지 설정 edge = 0, 폴링 엣지 설정 edge = 1
- *
- */
-void Driver_BLDC_HW_SetTIM2_InputCapture_Direction(uint8_t channel, uint8_t edge)
-{
-
-	Driver_BLDC_HW_Set_InputCapture_Disable();
-
-	switch (channel)
+	if( TIM3->SR & TIM_SR_UIF )
 	{
-	case 1 :
-		if(edge == R_edge) TIM2->CCER &= ~TIM_CCER_CC1P;		//라이징 엣지로 설정
-		else 		  	   TIM2->CCER |= TIM_CCER_CC1P;		//폴링 엣지로 설정
-		break;
-
-	case 2 :
-		if(edge == R_edge) TIM2->CCER &= ~TIM_CCER_CC2P;		//라이징 엣지로 설정
-		else 		  	   TIM2->CCER |= TIM_CCER_CC2P;		//폴링 엣지로 설정
-		break;
-
-	case 3 :
-		if(edge == R_edge) TIM2->CCER &= ~TIM_CCER_CC3P;		//라이징 엣지로 설정
-		else 		  	   TIM2->CCER |= TIM_CCER_CC3P;		//폴링 엣지로 설정
-		break;
-
-	default :
-		break;
-	}
-
-}
-
-void Driver_BLDC_HW_Set_InputCapture_Enable(uint8_t channel)
-{
-
-	switch (channel)
-	{
-	case 1 :
-		TIM2->SR &= ~TIM_SR_CC1OF;						//오버캡쳐 인터럽트 팬딩 비트 클리어
-		TIM2->SR &= ~TIM_SR_CC1IF;						//인터럽트 팬딩 비트 클리어
-		TIM2->DIER |= TIM_DIER_CC1IE;					//CH1 에 대해 인터럽트 활성화.
-
-		TIM2->CCER |= TIM_CCER_CC1E;					//CH1 인풋 캡쳐 활성화.
-		break;
-
-	case 2 :
-		TIM2->SR &= ~TIM_SR_CC2OF;						//오버캡쳐 인터럽트 팬딩 비트 클리어
-		TIM2->SR &= ~TIM_SR_CC2IF;						//인터럽트 팬딩 비트 클리어
-		TIM2->DIER |= TIM_DIER_CC2IE;					//CH2 에 대해 인터럽트 활성화.
-
-		TIM2->CCER |= TIM_CCER_CC2E;					//CH2 인풋 캡쳐 활성화.
-		break;
-
-	case 3 :
-		TIM2->SR &= ~TIM_SR_CC3OF;						//오버캡쳐 인터럽트 팬딩 비트 클리어
-		TIM2->SR &= ~TIM_SR_CC3IF;						//인터럽트 팬딩 비트 클리어
-		TIM2->DIER |= TIM_DIER_CC3IE;					//CH3 에 대해 인터럽트 활성화.
-
-		TIM2->CCER |= TIM_CCER_CC3E;					//CH3 인풋 캡쳐 활성화.
-		break;
-
-	default :
-		break;
+		TIM3->SR &= ~TIM_SR_UIF;
+		if(TIM3_ISR_Callback != NULL) TIM3_ISR_Callback();
 	}
 }
 
-
-
-void Driver_BLDC_HW_TIM2_IRQ_Handler()
+void TIM2_IRQ_Handler()
 {
 	if( TIM2->SR & TIM_SR_CC1IF )
 	{
 		TIM2->SR &= ~TIM_SR_CC1IF;
-		//TIM2->CCR1 값을 알고리즘 레이어나 다른 레이어의 static 변수에 넘겨주기
+		//TIM2->CCR1 값을 알고리즘 레이어나 다른 레이어에서 쓸수 있도록 매개변수로 넘겨주기.
 		//알고리즘 레이어의 static 변수를 update 하는 함수를 콜백하기.
 		TIM2_ISR_Callback_A((uint16_t)TIM2->CCR1);
 
@@ -231,11 +158,103 @@ void Driver_BLDC_HW_TIM2_IRQ_Handler()
 }
 
 
-void TIM3_IRQ_Handler()
+void Disable_TIM_IC_ALL()
 {
-	if( TIM3->SR & TIM_SR_UIF )
+	//인터럽트 비활성화.
+	TIM2->DIER &= ~TIM_DIER_CC1IE;
+	TIM2->DIER &= ~TIM_DIER_CC2IE;
+	TIM2->DIER &= ~TIM_DIER_CC3IE;
+
+	//인풋 캡쳐 비활성화.
+	TIM2->CCER &= ~TIM_CCER_CC1E;	//CH1 인풋캡쳐 모드 끄기
+	TIM2->CCER &= ~TIM_CCER_CC2E;	//CH2 인풋캡쳐 모드 끄기
+	TIM2->CCER &= ~TIM_CCER_CC3E;	//CH3 인풋캡쳐 모드 끄기
+}
+
+
+void Enable_TIM_IC(uint8_t channel,  TIM_IC_EDGE_MODE mode)
+{
+
+	switch (channel)
 	{
-		TIM3->SR &= ~TIM_SR_UIF;
-		if(TIM3_ISR_Callback != NULL) TIM3_ISR_Callback();
+	case 1 :
+		TIM2->DIER &= ~TIM_DIER_CC1IE_Msk;		//인터럽트 비활성화
+		TIM2->CCER &= ~TIM_CCER_CC1E_Msk;		//IC 비활성화
+
+		TIM2->CCER &= ~TIM_CCER_CC1P_Msk;		//CCxP 비트 reset, (Rising이 기본)
+		if(mode == FALLING_EDGE)
+		{
+			TIM2->CCER |= TIM_CCER_CC1P;
+		}
+
+		TIM2->DIER |= TIM_DIER_CC1IE;					//인터럽트 켜기
+		TIM2->CCER |= TIM_CCER_CC1E;					//인풋캡쳐 키기.
+		return;
+
+	case 2 :
+		TIM2->DIER &= ~TIM_DIER_CC2IE_Msk;		//인터럽트 비활성화
+		TIM2->CCER &= ~TIM_CCER_CC2E_Msk;		//IC 비활성화
+
+		TIM2->CCER &= ~TIM_CCER_CC2P_Msk;		//CCxP 비트 reset, (Rising이 기본)
+		if(mode == FALLING_EDGE)
+		{
+			TIM2->CCER |= TIM_CCER_CC2P;
+		}
+
+		TIM2->DIER |= TIM_DIER_CC2IE;					//인터럽트 켜기
+		TIM2->CCER |= TIM_CCER_CC2E;					//인풋캡쳐 키기.
+		return;
+
+	case 3 :
+		TIM2->DIER &= ~TIM_DIER_CC3IE_Msk;		//인터럽트 비활성화
+		TIM2->CCER &= ~TIM_CCER_CC3E_Msk;		//IC 비활성화
+
+		TIM2->CCER &= ~TIM_CCER_CC3P_Msk;		//CCxP 비트 reset, (Rising이 기본)
+		if(mode == FALLING_EDGE)
+		{
+			TIM2->CCER |= TIM_CCER_CC3P;
+		}
+
+		TIM2->DIER |= TIM_DIER_CC3IE;					//인터럽트 켜기
+		TIM2->CCER |= TIM_CCER_CC3E;					//인풋캡쳐 키기.
+		return;
+
+	default :
+		Disable_TIM_IC_ALL();
+		return;
+	}
+
+
+}
+
+
+void Disable_TIM_IC(uint8_t channel)
+{
+	switch (channel)
+	{
+	case 1 :
+		TIM2->DIER &= ~TIM_DIER_CC1IE_Msk;					//인터럽트 비활성화.
+		TIM2->CCER &= ~TIM_CCER_CC1E_Msk;					//인풋캡쳐 모드 끄기
+		TIM2->SR &= ~TIM_SR_CC1OF_Msk;						//오버캡쳐 인터럽트 팬딩 비트 클리어
+		TIM2->SR &= ~TIM_SR_CC1IF_Msk;						//인터럽트 팬딩 비트 클리어
+		return;
+
+	case 2 :
+		TIM2->DIER &= ~TIM_DIER_CC2IE_Msk;
+		TIM2->CCER &= ~TIM_CCER_CC2E_Msk;
+		TIM2->SR &= ~TIM_SR_CC2OF_Msk;
+		TIM2->SR &= ~TIM_SR_CC2IF_Msk;
+		return;
+
+	case 3 :
+		TIM2->DIER &= ~TIM_DIER_CC3IE_Msk;
+		TIM2->CCER &= ~TIM_CCER_CC3E_Msk;
+		TIM2->SR &= ~TIM_SR_CC3OF_Msk;
+		TIM2->SR &= ~TIM_SR_CC3IF_Msk;
+		return;
+
+	default :
+		Disable_TIM_IC_ALL();
+		return;
 	}
 }

@@ -38,7 +38,7 @@ void Polling_Conversion_Target()
 	target_value = RobustADC_Update(&robust_adc, (int32_t)pot_1);
 }
 
-uint16_t Get_Target_Value()
+uint16_t Get_Filtered_Pot_Value()
 {
 	return target_value;
 }

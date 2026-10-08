@@ -34,6 +34,6 @@ typedef struct {
 
 void Robust_Static_Init(uint16_t initial_val);
 void Polling_Conversion_Target();
-uint16_t Get_Target_Value();
+uint16_t Get_Filtered_Pot_Value();
 
 #endif /* INC_LAYER_1_ALGORITHM_ALGORITHM_ADC_CONTROL_H_ */

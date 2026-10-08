@@ -1,4 +1,0 @@
-﻿cycle,step,capture_step_index,ccr_target,ccr_current,zc_duration_us,sample_interval_us,interpolation_offset_us,elapsed_since_zc_us,delay_target_us,delay_limited_us,delay_trigger_us,total_step_us,zc_position_percent,delta_zc_prev_us,delta_zc_same_us,delta_total_prev_us,delta_total_same_us,delta_total_avg_us,raw_sample_count
-100,2,598,220,220,1341,50,0,50,950,584,534,1925,69.662,,,,,,20
-100,3,599,220,220,1467,50,25,25,1037,634,609,2101,69.824,126.000,,176.000,,176.000,20
-100,4,600,220,220,1292,50,25,25,975,684,659,1976,65.385,-175.000,,-125.000,,-37.000,20

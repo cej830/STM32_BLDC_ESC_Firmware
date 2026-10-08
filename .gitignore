@@ -9,3 +9,8 @@ Release/
 *.map
 .DS_Store
 Thumbs.db
+
+
+
+# Local documents
+Documents/

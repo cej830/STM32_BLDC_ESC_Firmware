@@ -45,7 +45,7 @@ typedef struct
 
 	uint8_t  tail;				//0xBB 패킷 종료 검증용
 
-}MotorTelemetry_t; //총 34 Byte -> 20kHz 스트리밍시
+}MotorTelemetry_t; 
 #pragma pack(pop)
 
 

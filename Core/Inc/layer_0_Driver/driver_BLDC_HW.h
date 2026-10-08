@@ -34,7 +34,7 @@ void Driver_BLDC_HW_Stop();
 //BLDC 내부 ADC 활용 센서리스 제어 알고리즘 관련 HW 레지스터 조작
 void Driver_BLDC_HW_SetTimTrig(uint16_t time_us);
 void Driver_BLDC_HW_SetTim3OFF();
-void Driver_BLDC_HW_GetPhaseV(volatile uint16_t* A, volatile uint16_t* B, volatile uint16_t* C , volatile uint16_t* VCOM);
+void Driver_BLDC_HW_GetPhaseV(uint16_t* A, uint16_t* B, uint16_t* C);
 
 void Driver_BLDC_HW_SetLowSide_Flat();
 void Driver_BLDC_HW_SetHighSide_Flat();
@@ -47,7 +47,18 @@ void Driver_BLDC_HW_Set_InputCapture_Disable();
 //인터럽트 핸들러 함수
 void ADC_IRQ_Handler();
 void TIM3_IRQ_Handler();
-void Driver_BLDC_HW_TIM2_IRQ_Handler();
+void TIM2_IRQ_Handler();
+
+
+typedef enum
+{
+    RISING_EDGE = 0,
+    FALLING_EDGE
+}TIM_IC_EDGE_MODE;
+
+void Disable_TIM_IC_ALL();
+void Enable_TIM_IC(uint8_t channel,  TIM_IC_EDGE_MODE mode);
+void Disable_TIM_IC(uint8_t channel);
 
 
 

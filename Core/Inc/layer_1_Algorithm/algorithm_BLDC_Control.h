@@ -11,6 +11,9 @@
 
 #include <layer_0_Driver/driver_BLDC_HW.h>
 #include <layer_0_Driver/driver_GateDriver.h>
+
+#include <layer_1_Algorithm/algorithm_ADC_Control.h>
+
 #include <my_Utility/utility_Log_BLDC.h>
 
 	/* @BLDC six_step table
@@ -32,16 +35,18 @@
 typedef enum
 {
 	NO_ERROR = 0,
-	TIME_OUT,
-	ZC_RISK_LIMIT,
-	ZC_REJECTED,
+	ERROR_TIME_OUT,
+	ERROR_ZC_REJECTED,
+	ERROR_ALREADY,
+	ERROR_SAMPL_AND_ZC,
+	
 }MotorError_t;
 
 typedef enum
 {
 	OPEN_LOOP = 0,
 	CLOSE_LOOP,
-	CLOSE_LOCKIN
+	CLOSE_LOCKIN,
 }MotorStatus_t;
 
 
@@ -60,51 +65,73 @@ typedef enum
 	FIXED
 }CCR_State_t;
 
+
+typedef enum
+{
+	OPENLOOP_SEARCHING_OFF = 0,
+	OPENLOOP_SEARCHING_ON
+}OpenLoop_State_t;
+
+typedef enum
+{
+	LOWSIDE_SAMPLE,
+	HIGHSIDE_SAMPLE
+}SAMPLE_MODE;
+
+
+
+typedef struct
+{
+	uint16_t delay_us;
+	uint8_t cnt_openloop;			//오픈루프 진행 카운트
+	uint8_t flag_openloop;
+}OPENLOOP_Mangae_t;
+
 //모터 관리 변수 구조체, TIM3 ISR
 typedef struct
 {
 	MotorStatus_t motorstate;		//motorstate, 0: OPENLOOP, 1: CLOSELOOP
 	uint16_t step;					//current step
-	uint16_t target_CCR;
-	uint16_t CCR;					//current CCR
-	uint8_t motor_first_closeloop;	//falg, 첫번째 클로즈루프인지, 0: NO, 1: YES
+	uint16_t ccr_target;
+	uint16_t ccr_curr;					//current CCR
+	uint8_t is_cl_first;		//falg, 첫번째 클로즈루프인지, 0: NO, 1: YES
 	uint8_t cnt_cycle;
 	CCR_State_t ccr_state;
-}MotorControl;
+	SAMPLE_MODE samplemode;
+}MotorControl_t;
 
 typedef struct
 {
-	uint16_t timestamp_start;		//인버터 동작시, 타임스탬프
-	uint8_t	zc_searching;			//ZC 탐지 플래그, 0: 탐지 OFF, 1: 탐지 ON
-	uint8_t zc_first_sample;		//스텝전환후 첫번째 샘플인지, 0: NO, 1: YES
+	uint16_t ts_start;				//인버터 동작시, 타임스탬프
+	uint8_t	 is_searching;			//ZC 탐지 플래그, 0: 탐지 OFF, 1: 탐지 ON
+	uint8_t  is_sample_first;		//스텝전환후 첫번째 샘플인지, 0: NO, 1: YES
 
-	uint8_t CNT;
-
-}ZC_Management;
+	uint8_t cnt;
+}ZC_Management_t;
 
 typedef struct
 {
-	uint16_t timestamp_prev;		//이전 샘플의 ISR 진입 타임스탬프
-	uint16_t timestamp_last_zc;		//이전 스텝의 zc 발생 타임스탬프
-	int16_t  BEMF_prev;				//이전 샘플의 BEMF
-	uint16_t current_delay;			//이전 샘플의 30도 지연 시간.
+	int16_t bemf_prev;
+	uint16_t ts_prev;
+	uint16_t ts_last_zc;
+	uint16_t delay_prev;
 }ZC_History;
 
 
 typedef struct
 {
-	int16_t log_BEMF_curr;
+	int16_t bemf_curr;
 
-	uint16_t log_timestamp_curr;
-	uint16_t log_timestamp_zc;
+	uint16_t ts_curr;
+	uint16_t ts_zc;
 
-	uint16_t log_delay_target;
-	uint16_t log_delay_limited;
-	uint16_t log_delay_trigger;
+	uint16_t delay_target;
+	uint16_t delay_limited;
+	uint16_t delay_trigger;
 
-	uint8_t log_zc_event;
+	uint8_t is_zc_detect;
 
-}Motorlog_Temporary;
+}Motor_Log_Temp;
 
 typedef struct
 {
@@ -114,11 +141,18 @@ typedef struct
 }ZC_Over_cnt;
 
 
-typedef enum
+typedef struct
 {
-	LOWSIDE_SAMPLE,
-	HIGHSIDE_SAMPLE
-}SAMPLE_MODE;
+	uint8_t step;
+	MotorStatus_t motor_state;
+
+	uint8_t is_cl_first;
+	uint8_t is_sample_first;
+	uint8_t is_searching;
+		
+	uint16_t ts_step;
+}ADC_snapshot_t;
+
 
 
 void ClearError();
@@ -127,6 +161,6 @@ MotorError_t Get_ErrorCode();
 void Algo_BLDC_Init();
 
 void Algo_BLDC_Startup();
-uint8_t Algo_BLDC_RunOpenloop();
+void OpenLoopStart();
 
 #endif /* INC_LAYER_1_ALGORITHM_ALGORITHM_BLDC_CONTROL_H_ */

@@ -53,17 +53,12 @@ void Service_BLDC_Run()
     	case MOTOR_START_REQUEST:
 
     		ClearError();
-    		Algo_BLDC_Startup();	//플래그 변수들을 처음으로 초기화. 스텝1으로 정렬.
     		HAL_Delay(100);			//정렬후 대기.
     		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_4);
-    		motor_state = MOTOR_RUN_OPENLOOP;
+			Algo_BLDC_Startup();	//플래그 변수들을 처음으로 초기화. 스텝1으로 정렬.
+    		motor_state = MOTOR_RUN_CLOSELOOP;
     		break;
-
-    	case MOTOR_RUN_OPENLOOP:
-    		uint8_t is_OpenLoop_end = Algo_BLDC_RunOpenloop();
-    		if(is_OpenLoop_end == 1) motor_state = MOTOR_RUN_CLOSELOOP;
-    		break;
-
+			
     	case MOTOR_RUN_CLOSELOOP:
 
     		MotorError_t error = Get_ErrorCode();

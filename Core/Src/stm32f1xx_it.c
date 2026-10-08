@@ -265,7 +265,6 @@ void TIM1_CC_IRQHandler(void)
 	if(TIM1->SR & TIM_SR_CC4IF_Msk)
 	{
 		TIM1->SR &= ~TIM_SR_CC4IF_Msk;
-		GPIOC->BSRR = (1U << 14);
 
 	}
   /* USER CODE END TIM1_CC_IRQn 1 */
@@ -280,7 +279,7 @@ void TIM2_IRQHandler(void)
 
   /* USER CODE END TIM2_IRQn 0 */
   /* USER CODE BEGIN TIM2_IRQn 1 */
-	Driver_BLDC_HW_TIM2_IRQ_Handler();
+	TIM2_IRQ_Handler();
   /* USER CODE END TIM2_IRQn 1 */
 }
 
