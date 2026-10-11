@@ -13,6 +13,10 @@ typedef struct
     volatile uint16_t ts_compB;
     volatile uint16_t ts_compC;
 
+    uint16_t* buff_compA;
+    uint16_t* buff_compB;
+    uint16_t* buff_compC;
+
     volatile uint8_t is_edge_occur;
     volatile uint8_t cnt_edge;
 

@@ -131,6 +131,9 @@ typedef struct
 
 	uint8_t is_zc_detect;
 
+	uint16_t ts_tim;
+	uint8_t cnt_ic;
+
 }Motor_Log_Temp;
 
 typedef struct
@@ -149,6 +152,8 @@ typedef struct
 	uint8_t is_cl_first;
 	uint8_t is_sample_first;
 	uint8_t is_searching;
+
+	uint16_t ts_start;
 		
 	uint16_t ts_step;
 }ADC_snapshot_t;

@@ -13,7 +13,7 @@
 
 #define MAX_TIME_OUT 				5000
 #define BLANKING_TIME 				30
-#define CONTROL_PATH_LATENCY_US		19
+#define CONTROL_PATH_LATENCY_US		(19+9)
 
 #define DUR_VALID			100
 #define DUR_REJECT			500
@@ -25,6 +25,9 @@
 #define ERROR_NUM_SAMPLE_AND_ZC		(9995)
 
 #define HALF_ARR 900
+
+
+static uint8_t debug_idx = 0;
 
 
 /*
@@ -56,6 +59,29 @@ static volatile ZC_Management_t zc_manage = {0};
 static volatile ZC_History zc_history = {0};
 static volatile ZC_Over_cnt zc_over_cnt = {0};
 static volatile ZC_Valid_Status_t zc_valid_status = ZC_VALID;
+
+
+static volatile uint16_t scope_ts_zc_adc = 0;
+static volatile uint16_t scope_ts_zc_tim = 0;
+static int16_t scope_diff = 0;
+
+
+typedef struct
+{
+
+	uint16_t dur_adc_to_zc;
+	uint16_t dur_adc_zc_to_trigger;
+	uint16_t dur_adc_trigger_to_end;
+
+	uint16_t dur_tim_sixstep;
+	uint16_t dur_tim_ccr;
+	uint16_t dur_tim_comp;
+
+}Scope_time_t;
+
+static Scope_time_t scope_time;
+
+
 
 typedef struct
 {
@@ -190,12 +216,11 @@ void Algo_BLDC_Startup()
 }
 
 
-
-
-
 void Algo_BLDC_AdcISRCallback()
 {
-	
+	uint16_t t0,t1,t2,t3;
+	t0 = Driver_Time_Get_Us();
+
 	ADC_snapshot_t adc_snapshot;
 
 	adc_snapshot.step            = motorcontrol.step;
@@ -204,27 +229,24 @@ void Algo_BLDC_AdcISRCallback()
 	adc_snapshot.is_sample_first = zc_manage.is_sample_first;
 	adc_snapshot.ts_step         = zc_manage.ts_start;
 	adc_snapshot.is_searching    = zc_manage.is_searching;
-		
+
+
 	//Get timestamp and Duration.
 	uint16_t ts_curr = Driver_Time_Get_Us();
 	uint16_t dur_now = (uint16_t)(ts_curr - adc_snapshot.ts_step);
 
-	
-	
 	//Block ADC value until step_duration is less than BLANKINGTIME
 	if(dur_now < BLANKING_TIME)
 	{
 		return;
 	}
 
-	GPIOC->BSRR = (1U << (14));
 	int16_t bemf_curr = Calculate_BEMF(adc_snapshot.step);	//sw bemf 계산.
 	MotorTelemetry_t motor_log = {0};
 	Motor_Log_Temp temp = {0};
 
 	temp.ts_curr   = ts_curr;
 	temp.bemf_curr = bemf_curr;
-	GPIOC->BSRR = (1U << (14+16));
 
 	if(adc_snapshot.motor_state == OPEN_LOOP)
 	{
@@ -254,18 +276,22 @@ void Algo_BLDC_AdcISRCallback()
 
 	uint8_t idx = adc_snapshot.step-1;
 	uint16_t ts_zc;							//zc가 발생함 타임스탬프
-	uint16_t dur_step_to_zc;				//스텝 시작부터 zc 발생 까지의 시간 기록
+	uint16_t dur_step_to_zc;				//스텝 시작부터 zc 발생 까지의 시간 기록[[[
 	uint16_t dur_step_to_zc_last;
 	ZC_State_t is_zc_detect;
+	Comparator_t comp;
 
 	is_zc_detect = is_ZeroCrossing_Occur(adc_snapshot.step, bemf_curr, zc_history.bemf_prev, adc_snapshot.is_sample_first);
 	temp.is_zc_detect = is_zc_detect;
+
+	t1 = Driver_Time_Get_Us();
+	scope_time.dur_adc_to_zc = (uint16_t)(t1-t0);
 
 	switch (is_zc_detect)
 	{
 		case ZC_NOT_YET :
 			zc_manage.is_sample_first = 0;
-			zc_history.bemf_prev = bemf_curr;			
+			zc_history.bemf_prev = bemf_curr;
 			zc_history.ts_prev = ts_curr;
 			Return_And_Logging(&motor_log, &temp, &adc_snapshot);
 			return;
@@ -274,17 +300,23 @@ void Algo_BLDC_AdcISRCallback()
 			Return_And_Logging(&motor_log, &temp, &adc_snapshot);
 			return;
 
-		
+
 		case ZC_DETECTED :
 			{
 				zc_check.cnt_zc_already = 0;
 				ts_zc = Calculate_Linear_ZC_timestamp(ts_curr, bemf_curr, zc_history.ts_prev, zc_history.bemf_prev);  //선형 보간 계산 을 통해 zc 구하기
 				temp.ts_zc = ts_zc;
 
+				Setting_Comparator_Off();
+
+				scope_ts_zc_adc = ts_zc;
+				scope_ts_zc_tim = (comp.ts_compA + comp.ts_compB + comp.ts_compC);
+				scope_diff = scope_ts_zc_adc - scope_ts_zc_tim;
+
 				dur_step_to_zc = (uint16_t)(ts_zc - adc_snapshot.ts_step);	//step_to_zc duration 계산
 				dur_step_to_zc_last = zc_check.dur_step_to_zc[idx];			//last step_to_zc duration 꺼내서, 비교
 				zc_check.zc_valid = Check_Valid_ZC(dur_step_to_zc_last, dur_step_to_zc, &adc_snapshot);
-			
+
 				if(zc_check.zc_valid == ZC_REJECT)
 				{
 					Motor_Stop_and_LogPush(&motor_log, &temp, &adc_snapshot, ERROR_ZC_REJECTED, ERROR_NUM_ZC_REJECTED);
@@ -293,8 +325,8 @@ void Algo_BLDC_AdcISRCallback()
 				zc_check.dur_step_to_zc[idx] = dur_step_to_zc;	//버퍼의 값을 업데이트
 				break;
 			}
-			
-			
+
+
 		case ZC_ALREADY_OCCUR :
 			{
 				zc_manage.is_sample_first = 0;
@@ -306,10 +338,10 @@ void Algo_BLDC_AdcISRCallback()
 				}
 
 				//첫번째 샘플에서 ZC가 이미 지나갔다, step 시작부터 현재 첫번째 샘플 검출까지 걸린시간은 dur_now.
-				dur_step_to_zc_last = zc_check.dur_step_to_zc[idx];	
+				dur_step_to_zc_last = zc_check.dur_step_to_zc[idx];
 				if(dur_step_to_zc_last > dur_now)	//이전 스텝에서 기록된 step_to_ZC duration이, dur_now 보다 길면.
 				{
-					zc_over_cnt.cnt_predict_over++;		//ZC의 발생 시간을 비교하면 < step - ZC - now - last_step_zc > 
+					zc_over_cnt.cnt_predict_over++;		//ZC의 발생 시간을 비교하면 < step - ZC - now - last_step_zc >
 					dur_step_to_zc = dur_now;			//step-ZC의 시간은 보수적으로 가장 긴값인 step-now 를 사용한다.
 				}										//첫샘플에서 이미 ZC가 지난것은, ADC의 해상도가 한계라는 의미
 				else
@@ -328,7 +360,7 @@ void Algo_BLDC_AdcISRCallback()
 	}
 
 
-	//ZC-to-ZC 로부터 30도 target delay 계산, 레이트 리미터(PAR) 적용, zc 이후 지금까지 흘러간 시간 duration 계산  
+	//ZC-to-ZC 로부터 30도 target delay 계산, 레이트 리미터(PAR) 적용, zc 이후 지금까지 흘러간 시간 duration 계산
 	uint16_t delay_target  = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
 	uint16_t delay_limited = Calculate_limitied_Delaytime(zc_history.delay_prev, delay_target, PAR, &adc_snapshot);
 	uint16_t delay_trigger = Calculate_Delay_Trigger(ts_curr,ts_zc, delay_limited);
@@ -346,40 +378,108 @@ void Algo_BLDC_AdcISRCallback()
 
 	zc_manage.is_searching = 0;
 	motorcontrol.is_cl_first = 0;
-	
+
+	uint16_t tim_zc = (uint16_t)((uint32_t)comp.ts_compA + (uint32_t)comp.ts_compB + (uint32_t)comp.ts_compC);
+	temp.ts_tim = tim_zc;
+	temp.cnt_ic = comp.cnt_edge;
+
+	t2 = Driver_Time_Get_Us();
+	scope_time.dur_adc_zc_to_trigger = (uint16_t)(t2 - t1);
+
 	//TIM3로 전기각 30도 대기시간 트리거
 	Driver_BLDC_HW_SetTimTrig(delay_trigger);
+
+	Get_Curr_CompStatus(&comp);
+
+	uint8_t log_idx = debug_idx;
+
+	if(comp.is_edge_occur == 1 && comp.cnt_edge > 0)
+	{
+	    if(log_idx >= comp.cnt_edge)
+	    {
+	        log_idx = comp.cnt_edge - 1;
+	    }
+
+	    temp.ts_tim =
+	        (uint16_t)(
+	            comp.buff_compA[log_idx] +
+	            comp.buff_compB[log_idx] +
+	            comp.buff_compC[log_idx]
+	        );
+
+
+	    // 십의 자리 = 총 edge 수
+	    // 일의 자리 = 현재 보여주는 edge 순번(1부터 시작)
+	    temp.cnt_ic =
+	        (uint8_t)(comp.cnt_edge * 10 + (log_idx + 1));
+
+
+	    //temp.cnt_ic = comp.cnt_edge;
+	}
+	else
+	{
+	    temp.ts_tim = 0;
+	    temp.cnt_ic = 0;
+	}
 	Return_And_Logging(&motor_log, &temp, &adc_snapshot);
+
+	t3 = Driver_Time_Get_Us();
+	scope_time.dur_adc_trigger_to_end = (uint16_t)(t3 - t2);
 }
 
 
 void Algo_BLDC_TimISRCallback()
 {
+	uint16_t t0, t1, t2, t3;
+	t0 = Driver_Time_Get_Us();
+
 	Driver_BLDC_HW_SetTim3OFF();
-	
+
 	motorcontrol.step++;
 	if(motorcontrol.step > 6)
 	{
 		motorcontrol.step = 1;
 	}
 
+	//C
 	if(motorcontrol.step == 1)
 	{
 		GPIOC->BSRR = (1U << 13);
 	}
-
 	else
 	{
 		GPIOC->BSRR = (1U << (13+16));
 	}
-	
+
+	//B
+	if(motorcontrol.step == 2)
+	{
+		GPIOC->BSRR = (1U << 14);
+	}
+	else
+	{
+		GPIOC->BSRR = (1U << (14+16));
+	}
+
+	//A
+	if(motorcontrol.step == 3)
+	{
+		GPIOB->BSRR = (1U << 5);
+	}
+	else
+	{
+		GPIOB->BSRR = (1U << (5+16));
+	}
+
+
+
 	MotorStatus_t motor_state = motorcontrol.motorstate;
 
 	switch (motor_state)
 	{
 		case OPEN_LOOP :
 		OpenLoop_Update_Rampdelay();
-		
+
 		if(openloop_manage.delay_us <= LAST_OPEN_LOOP_DELAY)
 		{
 			motorcontrol.motorstate = CLOSE_LOOP;
@@ -397,9 +497,24 @@ void Algo_BLDC_TimISRCallback()
 		return;
 
 		case CLOSE_LOCKIN :
+
+		Sixstep_and_Set_ZC_manage_Flag();
+		t1 = Driver_Time_Get_Us();
+		scope_time.dur_tim_sixstep = (uint16_t)(t1-t0);
+
 		CloseLockIn_Update_SamplePosition();
 		CloseLockIn_Control_CCR(225);
-		Sixstep_and_Set_ZC_manage_Flag();
+		t2 = Driver_Time_Get_Us();
+		scope_time.dur_tim_ccr = (uint16_t)(t2-t1);
+
+
+		Reset_Comp_t();
+		Setting_Comparator_State(motorcontrol.step);
+
+
+		t3 = Driver_Time_Get_Us();
+		scope_time.dur_tim_comp = (uint16_t)(t3-t2);
+
 		return;
 
 		default :
@@ -422,13 +537,16 @@ static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motor_Log_Temp* temp
 	log->ccr_current = motorcontrol.ccr_curr;
 	log->BEMF_curr = temp->bemf_curr;
 
-	log->timestamp_start = zc_manage.ts_start;
+	log->timestamp_start = snapshot->ts_step;
 	log->timestamp_curr = temp->ts_curr;
 	log->timestamp_zc =	temp->ts_zc;
 
 	log->delay_limited = zc_history.delay_prev;
 	log->delay_trigger = temp->delay_trigger;
 	log->delay_PAR = zc_manage.cnt;
+
+	log->ts_tim = temp->ts_tim;
+	log->cnt_ic = temp->cnt_ic;
 
 	log->tail = TAIL;
 }
