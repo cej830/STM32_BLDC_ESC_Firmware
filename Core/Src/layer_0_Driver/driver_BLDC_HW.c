@@ -24,15 +24,22 @@ void Driver_BLDC_HW_GetPhaseV(uint16_t* A,  uint16_t* B, uint16_t* C );
 //------ADC ISR, TIM3 ISR 에서 사용
 static Callbackfunc ADC_ISR_Callback = NULL;
 static Callbackfunc TIM3_ISR_Callback = NULL;
+static Callbackfunc TIM4_ISR_Callback = NULL;
 
 static Callbackfunc2 TIM2_ISR_Callback_A =NULL;
 static Callbackfunc2 TIM2_ISR_Callback_B =NULL;
 static Callbackfunc2 TIM2_ISR_Callback_C =NULL;
 
-void Driver_BLDC_HW_SetFuncAdress(Callbackfunc ADC_func, Callbackfunc TIM_func)
+static Callbackfunc2 TIM2_ISR_Callback_Common =NULL;
+
+void Driver_BLDC_HW_SetFuncAdress(Callbackfunc ADC_func, Callbackfunc TIM_func, Callbackfunc2 TIM2_func, Callbackfunc TIM4_func)
 {
 	ADC_ISR_Callback = ADC_func;
 	TIM3_ISR_Callback = TIM_func;
+
+	TIM2_ISR_Callback_Common = TIM2_func;
+
+	TIM4_ISR_Callback = TIM4_func;
 }
 
 void Driver_BLDC_HW_SetFuncAdress2(Callbackfunc2 TIM2_func1, Callbackfunc2 TIM2_func2, Callbackfunc2 TIM2_func3)
@@ -97,6 +104,30 @@ void Driver_BLDC_HW_SetTimTrig(uint16_t time_us)
 }
 
 
+void Driver_WatchDog_Trigger(uint16_t time_us)
+{
+	uint16_t trigger = time_us;
+
+	if(trigger > 300)
+	{
+		trigger = 300;
+	}
+
+	TIM4->CR1 &= ~TIM_CR1_CEN;			//타이머4 enable RESET
+	TIM4->SR &= ~TIM_SR_UIF;			//업데이트 인터럽트 RESET
+
+	TIM4->CNT = 0;						//CNT값 초기화
+	TIM4->ARR =  trigger;				//16비트 us초 입력
+	TIM4->CR1 |= TIM_CR1_CEN;			//타이머4 enable SET
+}
+
+void Driver_BLDC_HW_SetTim4OFF()
+{
+	TIM4->CR1 &= ~TIM_CR1_CEN;	//CEN (0) 비활성화.
+	TIM4->CNT = 0;				//CNT값 초기화
+}
+
+
 void Driver_BLDC_HW_SetTim3OFF()
 {
 	TIM3->CR1 &= ~TIM_CR1_CEN;	//CEN (0) 비활성화.
@@ -135,25 +166,43 @@ void TIM2_IRQ_Handler()
 {
 	if( TIM2->SR & TIM_SR_CC1IF )
 	{
+		uint16_t capture = (uint16_t)TIM2->CCR1;
+
 		TIM2->SR &= ~TIM_SR_CC1IF;
 		//TIM2->CCR1 값을 알고리즘 레이어나 다른 레이어에서 쓸수 있도록 매개변수로 넘겨주기.
 		//알고리즘 레이어의 static 변수를 update 하는 함수를 콜백하기.
-		TIM2_ISR_Callback_A((uint16_t)TIM2->CCR1);
+		TIM2_ISR_Callback_A(capture);
+		TIM2_ISR_Callback_Common(capture);
 
 	}
 
 	else if (TIM2->SR & TIM_SR_CC2IF)
 	{
+		uint16_t capture = (uint16_t)TIM2->CCR2;
+
 		TIM2->SR &= ~TIM_SR_CC2IF;
 		// TIM2->CCR2 값을 알고리즘 레이어나 다른 레이어에 넘겨주기
-		TIM2_ISR_Callback_B((uint16_t)TIM2->CCR2);
+		TIM2_ISR_Callback_B(capture);
+		TIM2_ISR_Callback_Common(capture);
 	}
 
 	else if (TIM2->SR & TIM_SR_CC3IF)
 	{
+		uint16_t capture = (uint16_t)TIM2->CCR3;
+
 		TIM2->SR &= ~TIM_SR_CC3IF;
 		// TIM2->CCR3 값을 알고리즘 레이어나 다른 레이어에 넘겨주기
-		TIM2_ISR_Callback_C((uint16_t)TIM2->CCR3);
+		TIM2_ISR_Callback_C(capture);
+		TIM2_ISR_Callback_Common(capture);
+	}
+}
+
+void TIM4_IRQ_Handler()
+{
+	if( TIM4->SR & TIM_SR_UIF )
+	{
+		TIM4->SR &= ~TIM_SR_UIF;
+		if(TIM4_ISR_Callback != NULL) TIM4_ISR_Callback();
 	}
 }
 

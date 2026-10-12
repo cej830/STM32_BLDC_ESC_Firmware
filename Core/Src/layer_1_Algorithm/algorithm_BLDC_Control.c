@@ -10,23 +10,6 @@
 #include "layer_1_Algorithm/algorithm_Compartor.h"
 
 
-
-#define MAX_TIME_OUT 				5000
-#define BLANKING_TIME 				30
-#define CONTROL_PATH_LATENCY_US		(19+9)
-
-#define DUR_VALID			100
-#define DUR_REJECT			500
-#define MAX_RISK_CNT	8
-
-#define ERROR_NUM_TIMEOUT			(9999)
-#define ERROR_NUM_ZC_REJECTED		(9997)
-#define ERROR_NUM_ALREDY			(9996)
-#define ERROR_NUM_SAMPLE_AND_ZC		(9995)
-
-#define HALF_ARR 900
-
-
 static uint8_t debug_idx = 0;
 
 
@@ -42,9 +25,6 @@ static volatile uint16_t START_CCR = 220;
 static volatile uint16_t START_OPEN_LOOP_DELAY = 10000;
 static volatile uint16_t LAST_OPEN_LOOP_DELAY = 6000;
 
-//ZC발생후 전기각 30도 지연 대기 시간.
-static volatile uint16_t PAR = 50;
-
 
 //------------오픈 루프 동작 관련 변수
 static volatile OPENLOOP_Mangae_t openloop_manage = {0};
@@ -58,7 +38,6 @@ static volatile MotorControl_t motorcontrol = {0};
 static volatile ZC_Management_t zc_manage = {0};
 static volatile ZC_History zc_history = {0};
 static volatile ZC_Over_cnt zc_over_cnt = {0};
-static volatile ZC_Valid_Status_t zc_valid_status = ZC_VALID;
 
 
 static volatile uint16_t scope_ts_zc_adc = 0;
@@ -81,15 +60,6 @@ typedef struct
 
 static Scope_time_t scope_time;
 
-
-
-typedef struct
-{
-	uint16_t* dur_step_to_zc;
-	uint8_t cnt_risk;
-	uint8_t cnt_zc_already;
-	ZC_Valid_Status_t zc_valid;
-}ZC_Check_t;
 
 static uint16_t last_duration_buff[6] = {0};
 
@@ -124,6 +94,8 @@ uint8_t Algo_BLDC_RunOpenloop();
 //------------BLDC 관련 ISR 에서 콜백할 함수-----------------
 static void Algo_BLDC_AdcISRCallback();
 static void Algo_BLDC_TimISRCallback();
+void Common_Process(uint16_t zc);
+void WatchDog_TIM_Callback();
 
 //-----------LOG 작성을 위해 팩킹하는 함수
 static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motor_Log_Temp* temp, ADC_snapshot_t* snapshot);
@@ -138,10 +110,12 @@ static void sixstep(uint8_t step , uint16_t new_CCR);
 static inline int16_t Calculate_BEMF(uint8_t step);
 static inline ZC_State_t is_ZeroCrossing_Occur(uint8_t step , int16_t BEMF_curr, int16_t BEMF_prev, uint8_t is_first);
 static inline uint16_t Calculate_Linear_ZC_timestamp(uint16_t t_curr, int16_t BEMF_current, uint16_t t_prev, int16_t BEMF_prev);
+
+
 static inline ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t curr_duration, ADC_snapshot_t* snapshot);
 static inline uint16_t Calculate_Edgree_Delay_time(uint16_t current_time, uint16_t last_time, uint16_t step_start,uint8_t is_first );
-static inline uint16_t Calculate_limitied_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t PAR, ADC_snapshot_t* snapshot);
-static inline uint16_t Calculate_Delay_Trigger(uint16_t ts_curr, uint16_t ts_zc, uint16_t delay);
+static inline uint16_t Calculate_limitied_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t par, uint8_t is_first);
+static inline uint16_t Calculate_Delay_Trigger(uint16_t ts_curr, uint16_t ts_zc, uint16_t delay, uint8_t laytency);
 
 
 //------------TIM3 ISR 에 사용되는 함수.
@@ -165,7 +139,7 @@ MotorError_t Get_ErrorCode()
 
 void Algo_BLDC_Init()
 {
-	Driver_BLDC_HW_SetFuncAdress(Algo_BLDC_AdcISRCallback, Algo_BLDC_TimISRCallback);
+	Driver_BLDC_HW_SetFuncAdress(Algo_BLDC_AdcISRCallback, Algo_BLDC_TimISRCallback, Common_Process, WatchDog_TIM_Callback);
 }
 
 
@@ -205,10 +179,9 @@ void Algo_BLDC_Startup()
 	zc_check.cnt_zc_already = 0;
 	zc_check.zc_valid = ZC_VALID;
 
+	Driver_BLDC_HW_SetTim4OFF();
 	Reset_Comp_t();
-	Setting_Comparator_Off(1);
-	Setting_Comparator_Off(2);
-	Setting_Comparator_Off(3);
+	Setting_Comparator_Off();
 
 	Clear_LogRingBuffer();
 	sixstep(motorcontrol.step, motorcontrol.ccr_curr);
@@ -218,6 +191,11 @@ void Algo_BLDC_Startup()
 
 void Algo_BLDC_AdcISRCallback()
 {
+	if(motorcontrol.zc_source != ZC_SOURCE_ADC)
+	{
+		return;
+	}
+
 	uint16_t t0,t1,t2,t3;
 	t0 = Driver_Time_Get_Us();
 
@@ -362,8 +340,8 @@ void Algo_BLDC_AdcISRCallback()
 
 	//ZC-to-ZC 로부터 30도 target delay 계산, 레이트 리미터(PAR) 적용, zc 이후 지금까지 흘러간 시간 duration 계산
 	uint16_t delay_target  = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
-	uint16_t delay_limited = Calculate_limitied_Delaytime(zc_history.delay_prev, delay_target, PAR, &adc_snapshot);
-	uint16_t delay_trigger = Calculate_Delay_Trigger(ts_curr,ts_zc, delay_limited);
+	uint16_t delay_limited = Calculate_limitied_Delaytime(zc_history.delay_prev, delay_target, PAR, adc_snapshot.is_cl_first);
+	uint16_t delay_trigger = Calculate_Delay_Trigger(ts_curr,ts_zc, delay_limited, CONTROL_PATH_LATENCY_US);
 
 	//로그 기록, 지역변수 값들
 	temp.delay_target  = delay_target;
@@ -498,9 +476,35 @@ void Algo_BLDC_TimISRCallback()
 
 		case CLOSE_LOCKIN :
 
+		if(motorcontrol.zc_source == ZC_SOURCE_ADC )
+		{
+			if(motorcontrol.ccr_curr >= 1300)
+			{
+				motorcontrol.zc_source = ZC_SOURCE_COMP;
+			}
+		}
+
+		else if(motorcontrol.zc_source == ZC_SOURCE_COMP)
+		{
+			if(motorcontrol.ccr_curr < 1300)
+			{
+				motorcontrol.zc_source = ZC_SOURCE_ADC;
+			}
+		}
+
 		Sixstep_and_Set_ZC_manage_Flag();
+
 		t1 = Driver_Time_Get_Us();
 		scope_time.dur_tim_sixstep = (uint16_t)(t1-t0);
+
+		Driver_BLDC_HW_SetTim4OFF();
+
+
+		if(motorcontrol.zc_source == ZC_SOURCE_COMP)
+		{
+
+			Driver_WatchDog_Trigger(300);
+		}
 
 		CloseLockIn_Update_SamplePosition();
 		CloseLockIn_Control_CCR(225);
@@ -520,6 +524,144 @@ void Algo_BLDC_TimISRCallback()
 		default :
 		return;
 	}
+}
+
+
+void Common_Process(uint16_t zc)
+{
+	if(motorcontrol.zc_source != ZC_SOURCE_COMP)
+	{
+		return;
+	}
+
+	uint16_t ts_zc = zc;
+
+	uint16_t t0,t1,t2,t3;
+	t0 = Driver_Time_Get_Us();
+
+	ADC_snapshot_t adc_snapshot;
+
+	adc_snapshot.step            = motorcontrol.step;
+	adc_snapshot.motor_state     = motorcontrol.motorstate;
+	adc_snapshot.is_cl_first     = motorcontrol.is_cl_first;
+	adc_snapshot.is_sample_first = zc_manage.is_sample_first;
+	adc_snapshot.ts_step         = zc_manage.ts_start;
+	adc_snapshot.is_searching    = zc_manage.is_searching;
+
+	uint16_t ts_curr = zc;
+	uint16_t dur_edge = (uint16_t)(zc - adc_snapshot.ts_step);
+
+	//Block ADC value until step_duration is less than BLANKINGTIME
+	if(dur_edge < BLANKING_TIME)
+	{
+		return;
+	}
+
+	Setting_Comparator_Off();
+	Driver_BLDC_HW_SetTim4OFF();		//Watch Dog OFF,
+	MotorTelemetry_t motor_log = {0};
+	Motor_Log_Temp temp = {0};
+
+	int16_t bemf_curr = 999;
+
+	temp.ts_curr   = ts_curr;
+	temp.bemf_curr = bemf_curr;
+
+
+	if(adc_snapshot.is_searching == 0)
+	{
+		Return_And_Logging(&motor_log, &temp, &adc_snapshot);
+		return;
+	}
+
+	uint8_t idx = adc_snapshot.step-1;
+	uint16_t dur_step_to_zc;				//스텝 시작부터 zc 발생 까지의 시간 기록[[[
+	uint16_t dur_step_to_zc_last;
+	ZC_State_t is_zc_detect =  ZC_DETECTED;
+	temp.is_zc_detect = is_zc_detect;
+
+	t1 = Driver_Time_Get_Us();
+	scope_time.dur_adc_to_zc = (uint16_t)(t1-t0);
+
+	if(adc_snapshot.step == 1 ||  adc_snapshot.step == 3  || adc_snapshot.step == 5)
+	{
+		ts_zc -= FALLING_OFFSET;
+	}
+
+	else
+	{
+		ts_zc += FALLING_OFFSET;
+	}
+
+
+	temp.ts_zc = ts_zc;
+	dur_step_to_zc = (uint16_t)(ts_zc - adc_snapshot.ts_step);
+	dur_step_to_zc_last = zc_check.dur_step_to_zc[idx];
+	zc_check.zc_valid = Check_Valid_ZC(dur_step_to_zc_last, dur_step_to_zc, &adc_snapshot);
+
+	if(zc_check.zc_valid == ZC_REJECT)
+	{
+		Motor_Stop_and_LogPush(&motor_log, &temp, &adc_snapshot, ERROR_ZC_REJECTED, ERROR_NUM_ZC_REJECTED);
+		return;
+	}
+
+	zc_check.dur_step_to_zc[idx] = dur_step_to_zc;	//버퍼의 값을 업데이트
+
+	uint16_t delay_target = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
+	uint16_t delay_limited = Calculate_limitied_Delaytime(zc_history.delay_prev, delay_target, PAR, adc_snapshot.is_cl_first);
+
+	uint16_t now = Driver_Time_Get_Us();
+	uint16_t delay_trigger = Calculate_Delay_Trigger(now, ts_zc, delay_limited, CONTROL_PATH_LATENCY_US_2);
+
+	//상태(플래그) 업데이트, prev 값 업데이트
+	zc_history.ts_last_zc = ts_zc;
+	zc_history.ts_prev    = ts_curr;
+	zc_history.bemf_prev  = bemf_curr;
+	zc_history.delay_prev = delay_limited;
+
+	zc_manage.is_searching = 0;
+	motorcontrol.is_cl_first = 0;
+
+	t2 = Driver_Time_Get_Us();
+	scope_time.dur_adc_zc_to_trigger = (uint16_t)(t2 - t1);
+
+	//현재 상태 확인하기, -> CCR을 읽고 상태 결정
+	Driver_BLDC_HW_SetTimTrig(delay_trigger);
+
+	temp.delay_target  = delay_target;
+	temp.delay_limited = delay_limited;
+	temp.delay_trigger = delay_trigger;
+
+	temp.cnt_ic = 1;
+	temp.ts_tim = ts_zc;
+
+	Return_And_Logging(&motor_log, &temp, &adc_snapshot);
+	t3 = Driver_Time_Get_Us();
+	scope_time.dur_adc_trigger_to_end = (uint16_t)(t3 - t2);
+
+}
+
+
+void WatchDog_TIM_Callback()
+{
+	Driver_BLDC_HW_Stop();
+
+	Driver_BLDC_HW_SetTim4OFF();
+	Setting_Comparator_Off();
+
+	ADC_snapshot_t adc_snapshot;
+
+	adc_snapshot.step            = motorcontrol.step;
+	adc_snapshot.motor_state     = motorcontrol.motorstate;
+	adc_snapshot.is_cl_first     = motorcontrol.is_cl_first;
+	adc_snapshot.is_sample_first = zc_manage.is_sample_first;
+	adc_snapshot.ts_step         = zc_manage.ts_start;
+	adc_snapshot.is_searching    = zc_manage.is_searching;
+
+	MotorTelemetry_t motor_log = {0};
+	Motor_Log_Temp temp = {0};
+
+	Motor_Stop_and_LogPush(&motor_log, &temp, &adc_snapshot, ERROR_TIME_OUT, ERROR_NUM_TIMEOUT);
 }
 
 
@@ -562,9 +704,7 @@ static inline void Return_And_Logging(MotorTelemetry_t* motorlog, Motor_Log_Temp
 static inline void Motor_Stop_and_LogPush(MotorTelemetry_t* motorlog, Motor_Log_Temp* temp, ADC_snapshot_t* snapshot, MotorError_t errortype, uint16_t special_delay)
 {
 	Driver_BLDC_HW_Stop();
-	Disable_TIM_IC(1);
-	Disable_TIM_IC(2);
-	Disable_TIM_IC(3);
+	Setting_Comparator_Off();
 	
 	temp->delay_trigger = special_delay;
 	motor_error = errortype;
@@ -612,7 +752,7 @@ static inline void OpenLoopCommutate()
 	}	
 }
 
-#pragma region ZC_ADC_ISR_Prossing_Functions
+
 //ADC ISR 에서 호출, 선형보간으로 zc 발생 타임스탬프 구하기
 static inline uint16_t Calculate_Linear_ZC_timestamp(uint16_t t_curr, int16_t BEMF_current, uint16_t t_prev, int16_t BEMF_prev )
 {
@@ -649,7 +789,7 @@ static inline uint16_t Calculate_Linear_ZC_timestamp(uint16_t t_curr, int16_t BE
 }
 
 // #region ADC ISR 함수
-static inline uint16_t Calculate_Delay_Trigger(uint16_t ts_curr, uint16_t ts_zc, uint16_t delay)
+static inline uint16_t Calculate_Delay_Trigger(uint16_t ts_curr, uint16_t ts_zc, uint16_t delay, uint8_t laytency)
 {
 	//ZC발생 - now 까지의 duration을 구하기
 	//sample ---- ZC -------sample(now)  => sample(now ->get ts_curr)을 기준으로 ZC - nextstep 시간을 계산 
@@ -663,7 +803,7 @@ static inline uint16_t Calculate_Delay_Trigger(uint16_t ts_curr, uint16_t ts_zc,
 		return 1;		//sample - sample(now) ---- ZC or sample - ZC ----- sample(now) 둘다 오류, 
 	}
 
-	uint16_t dur_zc_to_isrend = dur_zc_to_now + CONTROL_PATH_LATENCY_US;
+	uint16_t dur_zc_to_isrend = dur_zc_to_now + laytency;
 
 	uint16_t delay_trigger = 1;
 	if(delay > dur_zc_to_isrend)		//정상적인 경우.
@@ -837,10 +977,10 @@ static inline ZC_Valid_Status_t Check_Valid_ZC(uint16_t prev_duration, uint16_t 
 	}
 }
 /* 레이트 리미터: 목표 딜레이로 점진적 수렴 */
-static inline uint16_t Calculate_limitied_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t PAR, ADC_snapshot_t* snapshot)
+static inline uint16_t Calculate_limitied_Delaytime(uint16_t current_delay, uint16_t target_delay, uint16_t par, uint8_t is_first)
 {	
 	// 첫번째 CL에 진입한 경우, 30도 전기각 딜레이 시간은 target_dealy 을 동일하게 적용한다.
-	if(snapshot->is_cl_first == 1)
+	if(is_first == 1)
 	{
 		return target_delay;
 	}
@@ -850,9 +990,9 @@ static inline uint16_t Calculate_limitied_Delaytime(uint16_t current_delay, uint
 	if(target_delay > current_delay)
 	{
 		//뺄셈으로 먼저 차이를 계산하여 오버슈트 방지
-		if((uint16_t)(target_delay - current_delay) > PAR)
+		if((uint16_t)(target_delay - current_delay) > par)
 		{
-			return (current_delay + PAR);
+			return (current_delay + par);
 		}
 
 		else
@@ -866,12 +1006,12 @@ static inline uint16_t Calculate_limitied_Delaytime(uint16_t current_delay, uint
 	if(target_delay < current_delay)
 	{
 		// 뺄셈으로 차이를 먼저 비교
-		if((uint16_t)(current_delay - target_delay) > PAR)
+		if((uint16_t)(current_delay - target_delay) > par)
 		{
 			// 안전 가드: 언더플로우 원천 차단
-			if(current_delay > PAR)
+			if(current_delay > par)
 			{
-				return (current_delay - PAR);
+				return (current_delay - par);
 			}
 
 			else

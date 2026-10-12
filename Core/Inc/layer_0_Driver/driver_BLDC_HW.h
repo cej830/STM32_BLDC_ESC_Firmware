@@ -23,7 +23,7 @@
 typedef void (*Callbackfunc)(void);
 typedef void (*Callbackfunc2)(uint16_t);
 
-void Driver_BLDC_HW_SetFuncAdress(Callbackfunc ADC_func, Callbackfunc TIM_func);
+void Driver_BLDC_HW_SetFuncAdress(Callbackfunc ADC_func, Callbackfunc TIM_func, Callbackfunc2 TIM2_func, Callbackfunc TIM4_func);
 void Driver_BLDC_HW_SetFuncAdress2(Callbackfunc2 TIM2_func1, Callbackfunc2 TIM2_func2, Callbackfunc2 TIM2_func3);
 
 //BLDC 모터 제어 관련 HW 레지스터 조작
@@ -44,10 +44,14 @@ void Driver_BLDC_HW_SetTIM2_InputCapture_Direction(uint8_t channel, uint8_t edge
 void Driver_BLDC_HW_Set_InputCapture_Enable(uint8_t channel);
 void Driver_BLDC_HW_Set_InputCapture_Disable();
 
+void Driver_WatchDog_Trigger(uint16_t time_us);
+void Driver_BLDC_HW_SetTim4OFF();
+
 //인터럽트 핸들러 함수
 void ADC_IRQ_Handler();
 void TIM3_IRQ_Handler();
 void TIM2_IRQ_Handler();
+void TIM4_IRQ_Handler();
 
 
 typedef enum

@@ -32,6 +32,27 @@
 	 */
 
 
+#define MAX_TIME_OUT 				5000
+#define BLANKING_TIME 				30
+#define CONTROL_PATH_LATENCY_US		(19+9)
+
+#define CONTROL_PATH_LATENCY_US_2		(13)
+
+#define DUR_VALID			100
+#define DUR_REJECT			500
+#define MAX_RISK_CNT	8
+
+#define ERROR_NUM_TIMEOUT			(9999)
+#define ERROR_NUM_ZC_REJECTED		(9997)
+#define ERROR_NUM_ALREDY			(9996)
+#define ERROR_NUM_SAMPLE_AND_ZC		(9995)
+
+#define PAR 50
+
+#define FALLING_OFFSET	2
+#define RISING_OFFSET	2
+
+
 typedef enum
 {
 	NO_ERROR = 0,
@@ -74,9 +95,15 @@ typedef enum
 
 typedef enum
 {
-	LOWSIDE_SAMPLE,
+	LOWSIDE_SAMPLE = 0,
 	HIGHSIDE_SAMPLE
 }SAMPLE_MODE;
+
+typedef enum
+{
+	ZC_SOURCE_ADC = 0,
+	ZC_SOURCE_COMP
+}ZC_SOURCE;
 
 
 
@@ -98,6 +125,8 @@ typedef struct
 	uint8_t cnt_cycle;
 	CCR_State_t ccr_state;
 	SAMPLE_MODE samplemode;
+	ZC_SOURCE zc_source;
+
 }MotorControl_t;
 
 typedef struct
@@ -153,10 +182,18 @@ typedef struct
 	uint8_t is_sample_first;
 	uint8_t is_searching;
 
-	uint16_t ts_start;
-		
 	uint16_t ts_step;
+
 }ADC_snapshot_t;
+
+
+typedef struct
+{
+	uint16_t* dur_step_to_zc;
+	uint8_t cnt_risk;
+	uint8_t cnt_zc_already;
+	ZC_Valid_Status_t zc_valid;
+}ZC_Check_t;
 
 
 
@@ -167,5 +204,6 @@ void Algo_BLDC_Init();
 
 void Algo_BLDC_Startup();
 void OpenLoopStart();
+
 
 #endif /* INC_LAYER_1_ALGORITHM_ALGORITHM_BLDC_CONTROL_H_ */

@@ -1,14 +1,15 @@
 
 #include "layer_1_Algorithm/algorithm_Compartor.h"
+#include "layer_1_Algorithm/algorithm_BLDC_Control.h"
 
 
 void Init_Comparator();
 void Reset_Comp_t();
 
 
-void Comparator_A_ZC_detect(uint16_t cnt_tim2);
-void Comparator_B_ZC_detect(uint16_t cnt_tim2);
-void Comparator_C_ZC_detect(uint16_t cnt_tim2);
+void Comparator_A_ZC_detect(uint16_t cnt_value);
+void Comparator_B_ZC_detect(uint16_t cnt_value);
+void Comparator_C_ZC_detect(uint16_t cnt_value);
 
 
 static Comparator_t comp_t = {0};
@@ -29,6 +30,33 @@ void Init_Comparator()
     comp_t.buff_compC = buff_ic_st_C;
 
     Reset_Comp_t();
+}
+
+
+// 구조체 변수 초기화.
+void Reset_Comp_t()
+{
+    comp_t.ts_compA = 0;
+    comp_t.ts_compB = 0;
+    comp_t.ts_compC = 0;
+
+    comp_t.is_edge_occur = 0;
+    comp_t.cnt_edge = 0;
+}
+
+
+
+void Setting_Comparator_Off()
+{
+    Disable_TIM_IC(1);
+    Disable_TIM_IC(2);
+    Disable_TIM_IC(3);
+}
+
+
+void Get_Curr_CompStatus(Comparator_t *temp)
+{
+    *temp = comp_t;
 }
 
 
@@ -62,7 +90,6 @@ void Comparator_B_ZC_detect(uint16_t cnt_value)
     {
     	return;
     }
-
 
     comp_t.buff_compA[idx] = 0;
 	comp_t.buff_compB[idx] = cnt_value;
@@ -98,30 +125,10 @@ void Comparator_C_ZC_detect(uint16_t cnt_value)
 }
 
 
-// 구조체 변수 초기화.
-void Reset_Comp_t()
-{
-    comp_t.ts_compA = 0;
-    comp_t.ts_compB = 0;
-    comp_t.ts_compC = 0;
-
-    comp_t.is_edge_occur = 0;
-    comp_t.cnt_edge = 0;
-}
-
-
-
-void Get_Curr_CompStatus(Comparator_t *temp)
-{
-    *temp = comp_t;
-}
-
 
 void Setting_Comparator_State(uint8_t step)
 {
-    Disable_TIM_IC(1);
-    Disable_TIM_IC(2);
-    Disable_TIM_IC(3);
+    Setting_Comparator_Off();
 
     switch (step)
     {
@@ -147,10 +154,4 @@ void Setting_Comparator_State(uint8_t step)
     }
 }
 
-void Setting_Comparator_Off()
-{
-    Disable_TIM_IC(1);
-    Disable_TIM_IC(2);
-    Disable_TIM_IC(3);
-}
 

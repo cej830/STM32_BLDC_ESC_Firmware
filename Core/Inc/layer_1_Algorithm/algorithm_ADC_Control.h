@@ -16,7 +16,7 @@
 #define ADC_RAW_MAX      4095   // 12-bit ADC 기준 (0~4095)
 
 #define OUT_MIN          220
-#define OUT_MAX          1400
+#define OUT_MAX          1750
 
 #define MEDIAN_WINDOW    5      // 스파이크 제거용 중앙값 윈도우 크기 (홀수 권장)
 #define EMA_ALPHA_Q8     38     // LPF 강도 (0~256 스케일, 38은 약 0.15 비중 -> 부드러운 필터링)

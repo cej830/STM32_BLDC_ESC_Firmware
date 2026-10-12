@@ -23,6 +23,25 @@ typedef struct
 }Comparator_t;
 
 
+typedef enum
+{
+	TIM_IC_OFF = 0,
+	TIM_IC_SHADOW,
+	TIM_IC_CAPTURE
+}TIM_IC_MODE;
+
+
+typedef struct
+{
+	TIM_IC_MODE mode;
+
+	uint16_t ts;
+	uint16_t ts_last_zc;
+	uint16_t delay_prev;
+
+}Comparator_mange_t;
+
+
 void Init_Comparator();
 void Reset_Comp_t();
 void Get_Curr_CompStatus(Comparator_t* temp);
