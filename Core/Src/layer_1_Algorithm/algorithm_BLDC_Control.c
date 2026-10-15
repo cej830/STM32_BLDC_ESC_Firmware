@@ -338,8 +338,35 @@ void Algo_BLDC_AdcISRCallback()
 	}
 
 
+
+	//ZC-to-ZC 를 구하기.
+	uint16_t ztz_curr;
+	uint16_t delay_target;
+
+	if(adc_snapshot.is_cl_first)
+	{
+		ztz_curr = dur_step_to_zc; //(uint16_t)(ts_zc - adc_snapshot.ts_step);
+		delay_target = ztz_curr;
+		zc_history.ztz_last = 0;
+	}
+	else
+	{
+		ztz_curr = (uint16_t)(ts_zc - zc_history.ts_last_zc);
+
+		if(zc_history.ztz_last == 0)
+		{
+			delay_target = ztz_curr / 2U;
+		}
+		else
+		{
+			delay_target = (uint16_t)((ztz_curr + zc_history.ztz_last)/4);
+		}
+
+		zc_history.ztz_last = ztz_curr;
+	}
+
 	//ZC-to-ZC 로부터 30도 target delay 계산, 레이트 리미터(PAR) 적용, zc 이후 지금까지 흘러간 시간 duration 계산
-	uint16_t delay_target  = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
+	//uint16_t delay_target  = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
 	uint16_t delay_limited = Calculate_limitied_Delaytime(zc_history.delay_prev, delay_target, PAR, adc_snapshot.is_cl_first);
 	uint16_t delay_trigger = Calculate_Delay_Trigger(ts_curr,ts_zc, delay_limited, CONTROL_PATH_LATENCY_US);
 
@@ -575,13 +602,14 @@ void Common_Process(uint16_t zc)
 	}
 
 	uint8_t idx = adc_snapshot.step-1;
-	uint16_t dur_step_to_zc;				//스텝 시작부터 zc 발생 까지의 시간 기록[[[
+	uint16_t dur_step_to_zc;				//스텝 시작부터 zc 발생 까지의 시간 기록
 	uint16_t dur_step_to_zc_last;
 	ZC_State_t is_zc_detect =  ZC_DETECTED;
 	temp.is_zc_detect = is_zc_detect;
 
 	t1 = Driver_Time_Get_Us();
 	scope_time.dur_adc_to_zc = (uint16_t)(t1-t0);
+
 
 	if(adc_snapshot.step == 1 ||  adc_snapshot.step == 3  || adc_snapshot.step == 5)
 	{
@@ -607,7 +635,34 @@ void Common_Process(uint16_t zc)
 
 	zc_check.dur_step_to_zc[idx] = dur_step_to_zc;	//버퍼의 값을 업데이트
 
-	uint16_t delay_target = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
+
+	//ZC-to-ZC 를 구하기.
+	uint16_t ztz_curr;
+	uint16_t delay_target;
+
+	if(adc_snapshot.is_cl_first)
+	{
+		ztz_curr = dur_step_to_zc; //(uint16_t)(ts_zc - adc_snapshot.ts_step);
+		delay_target = ztz_curr;
+		zc_history.ztz_last = 0;
+	}
+	else
+	{
+		ztz_curr = (uint16_t)(ts_zc - zc_history.ts_last_zc);
+
+		if(zc_history.ztz_last == 0)
+		{
+			delay_target = ztz_curr / 2U;
+		}
+		else
+		{
+			delay_target = (uint16_t)((ztz_curr + zc_history.ztz_last)/4);
+		}
+
+		zc_history.ztz_last = ztz_curr;
+	}
+
+	//uint16_t delay_target = Calculate_Edgree_Delay_time(ts_zc, zc_history.ts_last_zc, dur_step_to_zc, adc_snapshot.is_cl_first);
 	uint16_t delay_limited = Calculate_limitied_Delaytime(zc_history.delay_prev, delay_target, PAR, adc_snapshot.is_cl_first);
 
 	uint16_t now = Driver_Time_Get_Us();
@@ -618,6 +673,7 @@ void Common_Process(uint16_t zc)
 	zc_history.ts_prev    = ts_curr;
 	zc_history.bemf_prev  = bemf_curr;
 	zc_history.delay_prev = delay_limited;
+
 
 	zc_manage.is_searching = 0;
 	motorcontrol.is_cl_first = 0;
@@ -1139,6 +1195,26 @@ static inline uint16_t Calculate_Edgree_Delay_time(uint16_t current_time, uint16
 		return (uint16_t)(edgree_60/2U);
 	}
 }
+
+
+/*
+ * zc_to_zc 현재 , zc_to_zc 이전 스텝 -> 60도 전기각 시간 t_60
+ *
+ * ztz_curr : if (is_first) (ts_zc - ts_step)
+ * ztz_last = history.ztz_last
+ *
+ * (ztz_curr  + ztz_last)/2 = ztz_avg
+ * ztz_avg / 2 = t_30_avg
+ *
+ * (ztz_curr + ztz_last)/4 를 하기.
+ */
+
+
+
+
+
+
+
 
 
 static void sixstep(uint8_t step , uint16_t new_CCR)

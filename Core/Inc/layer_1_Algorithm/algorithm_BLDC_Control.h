@@ -144,6 +144,7 @@ typedef struct
 	uint16_t ts_prev;
 	uint16_t ts_last_zc;
 	uint16_t delay_prev;
+	uint16_t ztz_last;
 }ZC_History;
 
 
