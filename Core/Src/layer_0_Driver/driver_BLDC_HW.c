@@ -55,6 +55,8 @@ void Driver_BLDC_HW_Init()
 	TIM1->CCER |=  (1U << 12);		//TIM 채널4 출력 활성화
 	TIM3->DIER |= (1U << 0);		//TIM3 업데이트 인터럽트 활성화.
 	TIM2->CR1  |= TIM_CR1_CEN;
+
+	TIM4->DIER |= TIM_DIER_UIE;		//TIM4 ZC 검출 와치독 인터럽트 활성화.
 }
 
 
@@ -139,6 +141,13 @@ void Driver_BLDC_HW_GetPhaseV(uint16_t* A, uint16_t* B, uint16_t* C )
 	*A = ADC1->JDR1;
 	*B = ADC1->JDR2;
 	*C = ADC1->JDR3;
+}
+
+void Driver_BLDC_HW_GetShuntV(uint16_t* A, uint16_t* B, uint16_t* C )
+{
+	*A = ADC2->JDR1;
+	*B = ADC2->JDR2;
+	*C = ADC2->JDR3;
 }
 
 

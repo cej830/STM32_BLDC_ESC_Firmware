@@ -13,62 +13,14 @@
 static uint8_t debug_idx = 0;
 
 
-/*
-#define START_CCR					220
-#define START_OPEN_LOOP_DELAY		15000	//15ms
-#define LAST_OPEN_LOOP_DELAY		8000	//5ms
-*/
 
+//오픈루프 매크로
+#define START_CCR  				(220)
+#define START_OPEN_LOOP_DELAY 	(10000)
+#define LAST_OPEN_LOOP_DELAY  	(6000)
 
-// 디버거에서 실시간 수정 가능한 변수들
-static volatile uint16_t START_CCR = 220;
-static volatile uint16_t START_OPEN_LOOP_DELAY = 10000;
-static volatile uint16_t LAST_OPEN_LOOP_DELAY = 6000;
-
-
-//------------오픈 루프 동작 관련 변수
-static volatile OPENLOOP_Mangae_t openloop_manage = {0};
-
-//-----------모터 상 전압 기록--------------
-
-static volatile MotorError_t motor_error = NO_ERROR;
-
-
-static volatile MotorControl_t motorcontrol = {0};
-static volatile ZC_Management_t zc_manage = {0};
-static volatile ZC_History zc_history = {0};
-static volatile ZC_Over_cnt zc_over_cnt = {0};
-
-
-static volatile uint16_t scope_ts_zc_adc = 0;
-static volatile uint16_t scope_ts_zc_tim = 0;
-static int16_t scope_diff = 0;
-
-
-typedef struct
-{
-
-	uint16_t dur_adc_to_zc;
-	uint16_t dur_adc_zc_to_trigger;
-	uint16_t dur_adc_trigger_to_end;
-
-	uint16_t dur_tim_sixstep;
-	uint16_t dur_tim_ccr;
-	uint16_t dur_tim_comp;
-
-}Scope_time_t;
-
-static Scope_time_t scope_time;
-
-
-static uint16_t last_duration_buff[6] = {0};
-
-static ZC_Check_t zc_check = {
-		.dur_step_to_zc = last_duration_buff,
-		.cnt_risk = 0,
-		.cnt_zc_already = 0,
-		.zc_valid = ZC_VALID};
-
+#define ZC_ALREADY_MARGIN 10
+#define MAX_CNT_ALREADY	3
 
 typedef enum
 {
@@ -78,8 +30,54 @@ typedef enum
 	ZC_PASS,
 }ZC_State_t;
 
-#define ZC_ALREADY_MARGIN 10
-#define MAX_CNT_ALREADY	3
+typedef struct
+{
+	uint16_t dur_adc_to_zc;
+	uint16_t dur_adc_zc_to_trigger;
+	uint16_t dur_adc_trigger_to_end;
+
+	uint16_t dur_tim_sixstep;
+	uint16_t dur_tim_ccr;
+	uint16_t dur_tim_comp;
+}Scope_time_t;
+
+
+static uint16_t last_duration_buff[6] = {0};
+
+
+static volatile MotorError_t motor_error = NO_ERROR;
+
+static volatile OPENLOOP_Mangae_t openloop_manage = {0};
+
+static volatile MotorControl_t motorcontrol = {0};
+
+static volatile ZC_Management_t zc_manage = {0};
+static volatile ZC_History zc_history = {0};
+static volatile ZC_Over_cnt zc_over_cnt = {0};
+
+static ZC_Check_t zc_check = {
+		.dur_step_to_zc = last_duration_buff,
+		.cnt_risk = 0,
+		.cnt_zc_already = 0,
+		.zc_valid = ZC_VALID};
+
+static Shunt_Volatage_t shunt = {0};
+
+static Scope_time_t scope_time = {0};
+
+
+void Get_Shunt_Volatage(Shunt_Volatage_t* temp)
+{
+	*temp = shunt;
+}
+
+static inline void Update_Shunt()
+{
+	Driver_BLDC_HW_GetShuntV(&(shunt.v_shuntA), &(shunt.v_shuntB), &(shunt.v_shuntC));
+}
+
+
+
 
 //---------------에러 관리 함수------------------------
 void ClearError();
@@ -158,6 +156,7 @@ void Algo_BLDC_Startup()
 	motorcontrol.ccr_curr = START_CCR;
 	motorcontrol.ccr_target = START_CCR;
 	motorcontrol.samplemode = LOWSIDE_SAMPLE;
+	motorcontrol.zc_source = ZC_SOURCE_ADC;
 
 	zc_manage.is_searching = 0;			//ZC계산분기 ADC 플래그 RESET
 	zc_manage.is_sample_first = 0;
@@ -257,7 +256,6 @@ void Algo_BLDC_AdcISRCallback()
 	uint16_t dur_step_to_zc;				//스텝 시작부터 zc 발생 까지의 시간 기록[[[
 	uint16_t dur_step_to_zc_last;
 	ZC_State_t is_zc_detect;
-	Comparator_t comp;
 
 	is_zc_detect = is_ZeroCrossing_Occur(adc_snapshot.step, bemf_curr, zc_history.bemf_prev, adc_snapshot.is_sample_first);
 	temp.is_zc_detect = is_zc_detect;
@@ -285,11 +283,7 @@ void Algo_BLDC_AdcISRCallback()
 				ts_zc = Calculate_Linear_ZC_timestamp(ts_curr, bemf_curr, zc_history.ts_prev, zc_history.bemf_prev);  //선형 보간 계산 을 통해 zc 구하기
 				temp.ts_zc = ts_zc;
 
-				Setting_Comparator_Off();
-
-				scope_ts_zc_adc = ts_zc;
-				scope_ts_zc_tim = (comp.ts_compA + comp.ts_compB + comp.ts_compC);
-				scope_diff = scope_ts_zc_adc - scope_ts_zc_tim;
+				Setting_Comparator_Off();		//타이머 IC OFF
 
 				dur_step_to_zc = (uint16_t)(ts_zc - adc_snapshot.ts_step);	//step_to_zc duration 계산
 				dur_step_to_zc_last = zc_check.dur_step_to_zc[idx];			//last step_to_zc duration 꺼내서, 비교
@@ -384,17 +378,18 @@ void Algo_BLDC_AdcISRCallback()
 	zc_manage.is_searching = 0;
 	motorcontrol.is_cl_first = 0;
 
-	uint16_t tim_zc = (uint16_t)((uint32_t)comp.ts_compA + (uint32_t)comp.ts_compB + (uint32_t)comp.ts_compC);
-	temp.ts_tim = tim_zc;
-	temp.cnt_ic = comp.cnt_edge;
-
 	t2 = Driver_Time_Get_Us();
 	scope_time.dur_adc_zc_to_trigger = (uint16_t)(t2 - t1);
 
 	//TIM3로 전기각 30도 대기시간 트리거
 	Driver_BLDC_HW_SetTimTrig(delay_trigger);
 
+	Comparator_t comp;
 	Get_Curr_CompStatus(&comp);
+
+	uint16_t tim_zc = (uint16_t)((uint32_t)comp.ts_compA + (uint32_t)comp.ts_compB + (uint32_t)comp.ts_compC);
+	temp.ts_tim = tim_zc;
+	temp.cnt_ic = comp.cnt_edge;
 
 	uint8_t log_idx = debug_idx;
 

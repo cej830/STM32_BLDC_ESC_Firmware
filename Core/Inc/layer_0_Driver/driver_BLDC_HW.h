@@ -34,7 +34,9 @@ void Driver_BLDC_HW_Stop();
 //BLDC 내부 ADC 활용 센서리스 제어 알고리즘 관련 HW 레지스터 조작
 void Driver_BLDC_HW_SetTimTrig(uint16_t time_us);
 void Driver_BLDC_HW_SetTim3OFF();
+
 void Driver_BLDC_HW_GetPhaseV(uint16_t* A, uint16_t* B, uint16_t* C);
+void Driver_BLDC_HW_GetShuntV(uint16_t* A, uint16_t* B, uint16_t* C );
 
 void Driver_BLDC_HW_SetLowSide_Flat();
 void Driver_BLDC_HW_SetHighSide_Flat();

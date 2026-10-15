@@ -198,6 +198,15 @@ typedef struct
 
 
 
+typedef struct
+{
+	uint8_t num;
+	uint16_t v_shuntA;
+	uint16_t v_shuntB;
+	uint16_t v_shuntC;
+}Shunt_Volatage_t;
+
+
 void ClearError();
 MotorError_t Get_ErrorCode();
 

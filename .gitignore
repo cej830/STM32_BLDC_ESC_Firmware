@@ -14,3 +14,8 @@ Thumbs.db
 
 # Local documents
 Documents/
+
+
+__pycache__/
+*.pyc
+.vscode/
