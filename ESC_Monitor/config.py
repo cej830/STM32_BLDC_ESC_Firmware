@@ -31,3 +31,11 @@ MOTOR_POLE_PAIRS = MOTOR_POLES // 2  # 7극쌍
 
 # UI 갱신 주기
 GUI_REFRESH_INTERVAL_MS = 100  # 100ms (10Hz)
+
+# Shunt 전류 환산: 12비트 ADC, 3.3V, 10mOhm, 증폭 100배.
+# 무전류 상태에서 측정한 ADC 코드를 상별로 입력해 오프셋 보정 가능.
+CURRENT_ADC_VREF_V = 3.3
+CURRENT_ADC_MAX = 4095
+SHUNT_RESISTANCE_OHM = 0.010
+SHUNT_AMPLIFIER_GAIN = 100.0
+SHUNT_ZERO_ADC = {"A": 0.0, "B": 0.0, "C": 0.0}

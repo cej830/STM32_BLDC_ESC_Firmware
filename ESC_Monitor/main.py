@@ -90,6 +90,21 @@ class BLDCApp:
             return
 
         s = self.engine.stats
+        current = s.get("current_sample")
+        if current is not None:
+            amps = current["current_a"]
+            amp_text = f"{amps:.3f}" if amps is not None else "---"
+            source, sink = current["drive_phase"], current["low_side_phase"]
+            path = f"{source} → {sink} → Shunt {sink} → GND" if sink else "---"
+            self.view.lbl_current.config(
+                text=f"로우사이드 전류 추정: {amp_text} A | 경로: {path} | {current['current_status']}",
+                foreground="black" if current["current_status"] == "ESTIMATE" else "darkorange"
+            )
+        if s["total_recv"] > 0:
+            self.view.lbl_shunt.config(
+                text=f"Shunt (raw uint16): A: {s['shunt_a']:5d} | "
+                     f"B: {s['shunt_b']:5d} | C: {s['shunt_c']:5d}"
+            )
         tot = s["total_recv"] + s["lost_total"]
         loss_all = (s["lost_total"] / tot * 100.0) if tot > 0 else 0.0
 

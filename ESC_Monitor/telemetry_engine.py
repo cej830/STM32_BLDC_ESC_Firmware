@@ -14,6 +14,7 @@ from packet_def import (
     unpack_raw_packet
 )
 from zc_analyzer import ZCStabilityAnalyzer, diff_u16
+from current_sensing import measure_current
 
 class TelemetryEngine:
     def __init__(self):
@@ -53,6 +54,9 @@ class TelemetryEngine:
             "curr_zc_str": "NOT_YET",
             "curr_trigger": 0,
             "curr_ccr": 0,
+            "shunt_a": 0,
+            "shunt_b": 0,
+            "shunt_c": 0,
             "raw_e_rpm": 0.0,
             "filtered_e_rpm": 0.0
         }
@@ -173,6 +177,9 @@ class TelemetryEngine:
     # telemetry_engine.py _handle_sample() 내부 발췌
 
     def _handle_sample(self, pkt):
+        current = measure_current(pkt)
+        pkt = {**pkt, **current}
+        self.stats["current_sample"] = current
         self.stats["total_recv"] += 1
         step = pkt["step"]
         motor_state = pkt["motor_state_raw"]
@@ -238,6 +245,10 @@ class TelemetryEngine:
                 "ts_tim_comp": pkt["ts_tim"],
                 "err_adc_vs_comp_us": node.err_adc_vs_comp_us,
                 "cnt_ic": pkt["cnt_ic"],
+                "shunt_a": pkt["shunt_a"],
+                "shunt_b": pkt["shunt_b"],
+                "shunt_c": pkt["shunt_c"],
+                **current,
                 "zc_duration_us": node.curr_duration if node.curr_duration else 0,
                 "zc_pos_pct": round(node.zc_pos_pct, 1),
                 "diff_us": node.diff_us,
@@ -275,6 +286,9 @@ class TelemetryEngine:
         self.stats["curr_mode"] = pkt["motor_state_str"]
         self.stats["curr_zc_str"] = pkt["zc_event_str"]
         self.stats["curr_ccr"] = pkt["ccr"]
+        self.stats["shunt_a"] = pkt["shunt_a"]
+        self.stats["shunt_b"] = pkt["shunt_b"]
+        self.stats["shunt_c"] = pkt["shunt_c"]
         self.stats["e_rpm"] = int(self.analyzer.e_rpm)
         self.stats["m_rpm"] = int(self.analyzer.m_rpm)
         self.stats["cycle_zc_us"] = self.analyzer.cycle_zc_period_us

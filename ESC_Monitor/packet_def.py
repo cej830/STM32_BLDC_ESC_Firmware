@@ -9,10 +9,12 @@ import struct
 # B  : delay_PAR (uint8_t)
 # H  : ts_tim (uint16_t, 비교기 타이머 인풋캡쳐 타임스탬프)
 # B  : cnt_ic (uint8_t, 비교기 엣지 발생 횟수)
+# 3H : shunt_a, shunt_b, shunt_c (각 uint16_t, 원시값)
 # B  : tail (0xBB)
-# 총 크기: 1 + 2 + 1 + 2 + 10 + 1 + 2 + 1 + 1 = 21 바이트
-PACKET_FORMAT = "<B H B h 5H B H B B"
-PACKET_SIZE = struct.calcsize(PACKET_FORMAT)  # 21 Byte
+# FW의 packed MotorTelemetry_t에서 cnt_ic 다음, tail 직전에 A/B/C 순서로 배치.
+# 총 크기: 기존 21 + 6 = 27 바이트
+PACKET_FORMAT = "<B H B h 5H B H B 3H B"
+PACKET_SIZE = struct.calcsize(PACKET_FORMAT)  # 27 Byte
 
 HEADER_BYTE = 0xAA
 TAIL_BYTE = 0xBB
@@ -61,5 +63,8 @@ def unpack_raw_packet(raw_bytes):
         "delay_par": unpacked[9],
         "ts_tim": unpacked[10],           # 비교기 인풋캡쳐 ts_tim
         "cnt_ic": unpacked[11],           # 비교기 엣지 카운트
-        "tail": unpacked[12]
+        "shunt_a": unpacked[12],
+        "shunt_b": unpacked[13],
+        "shunt_c": unpacked[14],
+        "tail": unpacked[15]
     }

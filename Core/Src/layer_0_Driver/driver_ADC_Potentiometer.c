@@ -15,7 +15,7 @@ volatile uint16_t adc_DMA_buffer[2];
 
 void Driver_Init_Potentiometer()
 {
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_DMA_buffer, 2);
+	HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)adc_DMA_buffer, 2);
 }
 
 

@@ -218,12 +218,18 @@ void Algo_BLDC_AdcISRCallback()
 		return;
 	}
 
+	Update_Shunt();
+
 	int16_t bemf_curr = Calculate_BEMF(adc_snapshot.step);	//sw bemf 계산.
 	MotorTelemetry_t motor_log = {0};
 	Motor_Log_Temp temp = {0};
 
 	temp.ts_curr   = ts_curr;
 	temp.bemf_curr = bemf_curr;
+
+	temp.shuntA = shunt.v_shuntA;
+	temp.shuntB = shunt.v_shuntB;
+	temp.shuntC = shunt.v_shuntC;
 
 	if(adc_snapshot.motor_state == OPEN_LOOP)
 	{
@@ -741,7 +747,13 @@ static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motor_Log_Temp* temp
 	log->ts_tim = temp->ts_tim;
 	log->cnt_ic = temp->cnt_ic;
 
+	log->shunt_A = temp->shuntA;
+	log->shunt_B = temp->shuntB;
+	log->shunt_C = temp->shuntC;
+
 	log->tail = TAIL;
+
+
 }
 
 static inline void Return_And_Logging(MotorTelemetry_t* motorlog, Motor_Log_Temp* temp, ADC_snapshot_t* snapshot)

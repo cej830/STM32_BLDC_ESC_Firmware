@@ -150,17 +150,16 @@ int main(void)
   HAL_ADCEx_InjectedStart(&hadc2);
   HAL_ADCEx_InjectedStart_IT(&hadc1);
 
-  Driver_Init_Potentiometer();
+  Driver_Init_Potentiometer();	//HAL_ADCEx_MultiModeStart_DMA 를 통해, 버퍼주소를 넘겨준다
   Driver_Init_Us_Timer();
   Driver_Init_GateDriver();
   Driver_BLDC_HW_Init();
 
   Algo_BLDC_Init();
   Robust_Static_Init(220);
+  Init_Comparator();
 
   Create_LogRingBuffer();
-
-  Init_Comparator();
 
   Service_BLDC_Init();
   Service_Init_UART();

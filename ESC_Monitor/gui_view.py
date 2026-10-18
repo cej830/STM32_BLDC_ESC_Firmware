@@ -52,6 +52,19 @@ class DashboardView:
         )
         self.lbl_flags.pack(anchor=tk.W, padx=10, pady=2)
 
+        self.lbl_shunt = ttk.Label(
+            frame,
+            text="Shunt (raw uint16): A: --- | B: --- | C: ---",
+            font=("Consolas", 10)
+        )
+        self.lbl_shunt.pack(anchor=tk.W, padx=10, pady=2)
+
+        self.lbl_current = ttk.Label(
+            frame, text="로우사이드 전류 추정: --- A | 경로: ---",
+            font=("Consolas", 10, "bold")
+        )
+        self.lbl_current.pack(anchor=tk.W, padx=10, pady=2)
+
         # 리스크 모니터 및 ALREADY 카운트 전용 서브 프레임
         sub_frame = ttk.Frame(frame)
         sub_frame.pack(fill=tk.X, padx=10, pady=2)

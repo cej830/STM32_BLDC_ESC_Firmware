@@ -164,6 +164,10 @@ typedef struct
 	uint16_t ts_tim;
 	uint8_t cnt_ic;
 
+	uint16_t shuntA;
+	uint16_t shuntB;
+	uint16_t shuntC;
+
 }Motor_Log_Temp;
 
 typedef struct

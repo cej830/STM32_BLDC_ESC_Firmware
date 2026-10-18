@@ -9,7 +9,6 @@
 #include <layer_1_Algorithm/algorithm_ADC_Control.h>
 
 
-
 static volatile uint16_t target_value = 0;
 volatile uint8_t g_adc_ready_flag = 0;
 

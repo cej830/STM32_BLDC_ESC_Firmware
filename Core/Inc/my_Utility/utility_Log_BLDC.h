@@ -37,6 +37,10 @@ typedef struct
 	uint16_t ts_tim;
 	uint8_t cnt_ic;
 
+	uint16_t shunt_A;
+	uint16_t shunt_B;
+	uint16_t shunt_C;
+
 	uint8_t  tail;				//0xBB 패킷 종료 검증용
 
 }MotorTelemetry_t; 
