@@ -1,0 +1,95 @@
+<mxfile host="Electron">
+  <diagram name="페이지-1" id="0qVgQW-FQJrvKcwloZAf">
+    <mxGraphModel dx="889" dy="1075" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-3" edge="1" parent="1" source="MRs_N-3Hi5x-aDYM6Qda-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="MRs_N-3Hi5x-aDYM6Qda-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="초기화 정렬" vertex="1">
+          <mxGeometry height="40" width="90" x="80" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-5" edge="1" parent="1" source="MRs_N-3Hi5x-aDYM6Qda-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="MRs_N-3Hi5x-aDYM6Qda-4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="OPEN LOOP" vertex="1">
+          <mxGeometry height="40" width="90" x="210" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-7" edge="1" parent="1" source="MRs_N-3Hi5x-aDYM6Qda-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="MRs_N-3Hi5x-aDYM6Qda-6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CLOSE_LOOP" vertex="1">
+          <mxGeometry height="40" width="90" x="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CLOSE_LOOP&lt;div&gt;LOCK_IN&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="90" x="470" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-24" edge="1" parent="1" source="MRs_N-3Hi5x-aDYM6Qda-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="MRs_N-3Hi5x-aDYM6Qda-25" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-22" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="사용자 입력&lt;div&gt;시작, 정지 / 듀티 설정&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="170" x="275" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-2" edge="1" parent="1" source="MRs_N-3Hi5x-aDYM6Qda-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="9MulDgiOtZp2LDB2J9By-1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="MRs_N-3Hi5x-aDYM6Qda-25" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="정렬, Open loop 기동" vertex="1">
+          <mxGeometry height="50" width="260" x="230" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-8" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="9MulDgiOtZp2LDB2J9By-7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Closed loop 전환" vertex="1">
+          <mxGeometry height="50" width="260" x="230" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-18" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="9MulDgiOtZp2LDB2J9By-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;저듀티 구간&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;ADC 기반 검출&lt;div&gt;PWM 동기 샘플링 swBEMF&lt;/div&gt;&lt;div&gt;선형 보간&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="120" x="210" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-19" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="9MulDgiOtZp2LDB2J9By-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;고듀티 구간&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;외부 비교기 기반 검출&lt;div&gt;TIM2 Input Capture&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="120" x="390" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-9" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="9MulDgiOtZp2LDB2J9By-4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-20" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="9MulDgiOtZp2LDB2J9By-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BEMF Zero-Crossing 검출&lt;div&gt;운전 구간에 따라 선택&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="260" x="230" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-13" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="9MulDgiOtZp2LDB2J9By-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="다음 정류 시점 계산" vertex="1">
+          <mxGeometry height="50" width="120" x="300" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-15" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="9MulDgiOtZp2LDB2J9By-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Six step 갱신&lt;div&gt;TIM1 PWM 출력&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="120" x="570" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-14" edge="1" parent="1" source="9MulDgiOtZp2LDB2J9By-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="9MulDgiOtZp2LDB2J9By-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-21" connectable="0" parent="9MulDgiOtZp2LDB2J9By-14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="TIM delay" vertex="1">
+          <mxGeometry relative="1" x="-0.2843" as="geometry">
+            <mxPoint x="-14" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9MulDgiOtZp2LDB2J9By-12" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="TIM3 정류 예약" vertex="1">
+          <mxGeometry height="50" width="120" x="300" y="918" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
