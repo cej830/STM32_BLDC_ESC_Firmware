@@ -1,23 +1,20 @@
 # 하드웨어·펌웨어 구조
 
-2026-10-16 로컬 작업본을 읽고 작성한 구성 설명입니다. 소스에 구현된 동작과 실험으로 검증된 성능은 구분합니다.
-
 ## 하드웨어 블록
 
-최상위 회로도 `STM32_ESC_HW.kicad_sch`는 다음 하위 시트를 참조합니다.
+최상위 회로도 `STM32_ESC_HW.kicad_sch`는 다음 하위 시트를 참조한다.
 
-| 시트 | 범위 |
+| 시트 | 내용 |
 | --- | --- |
-| `power_block.kicad_sch` | Buck 및 LDO 전원 |
-| `mcu_block.kicad_sch` | STM32 MCU 및 주변 연결 |
+| `power_block.kicad_sch` | 12V 5V 전환 Buck 컨버터, 다이오드 OR 회로, LDO 회로 |
+| `mcu_block.kicad_sch` | STM32 MCU 주변 회로 |
 | `inverter_block.kicad_sch` | 게이트 드라이버, MOSFET, 션트 |
-| `sensing_block.kicad_sch` | BEMF 비교기와 션트 증폭·ADC 연결 |
-| `signal_block.kicad_sch` | USB·UART 관련 신호 회로 |
-| `interface_block.kicad_sch` | 사용자 인터페이스 |
+| `sensing_block.kicad_sch` | BEMF 비교기와 션트 증폭, ADC 연결 |
+| `interface_block.kicad_sch` | 가변저항, 스위치, LED  인터페이스 |
+| `comm.kicad_sch` | USB,UART 관련 보호 및 신호 매칭 회로 |
+| 
 
-`STM32_ESC_HW.kicad_pcb`에는 F.Cu, In1.Cu, In2.Cu, B.Cu의 네 구리층과 1.6mm 두께가 정의되어 있습니다. 층 수 확인만으로 접지·전력 무결성이나 제조 품질을 검증한 것은 아닙니다.
-
-후속 문서에서는 각 블록에 대해 회로 그림 한 장과 설계 이유를 연결합니다. 부품 선정 이유, 배치·배선 의도는 작성자 확인 없이 추정하여 채우지 않습니다.
+`STM32_ESC_HW.kicad_pcb`에는 F.Cu, In1.Cu, In2.Cu, B.Cu의 네 구리층과 1.6mm 두께가 정의되어 있습니다.
 
 작성자는 실물에서 USB 풀업 제어 MOSFET을 제거하고 배선 패치를 했으며, Vcom 측 커패시터를 제거했다고 설명했습니다. 이 변경이 현재 KiCad 파일에 반영되어 있는지는 확인되지 않았습니다. 따라서 설계 파일을 그대로 제작하면 현재 실물과 같다고 볼 수 없습니다. 상세 내용은 [개발 기록](development-story.md)에 정리했습니다.
 
@@ -52,7 +49,7 @@ flowchart LR
 
 `CLOSE_LOCKIN`은 코드상의 상태 이름입니다. 이 이름만으로 모터의 안정성이나 정류 정확도가 검증되었다는 뜻은 아닙니다.
 
-현재 개루프 정류 간격 설정은 10,000µs에서 시작하여 6,000µs까지 줄이는 형태이며, `LAST_OPEN_LOOP_DELAY=6000` 조건에서 폐루프로 전환합니다. 이 6ms는 기동 완료까지의 총 소요 시간이 아닙니다.
+현재 개루프 정류 간격 설정은 10,000µs에서 시작하여 6,000µs까지 줄이는 형태이며, `LAST_OPEN_LOOP_DELAY=6000` 조건에서 폐루프로 전환합니다.
 
 ## 6-step 정류
 

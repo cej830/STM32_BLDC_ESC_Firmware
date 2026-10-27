@@ -1,10 +1,9 @@
 # STM32 Sensorless BLDC ESC
 
-STM32F103C8 기반 센서리스 BLDC ESC. 회로·4-layer PCB 설계 및 펌웨어 구현을 수행하고, 12V에서 A2212/13T 1000kV 모터의 무부하 구동을 확인했다.
+STM32F103C8 기반 센서리스 BLDC ESC. 회로·4-layer PCB 설계 및 펌웨어 구현을 수행하고
+12V에서 A2212/13T 1000kV 모터의 무부하 구동을 확인했다.
 
 ![자체 제작 ESC의 모터 구동](Images/Demo/motor-running.gif)
-
-*A2212/13T 1000kV 모터의 고속 무부하 구동. [원본 영상](Documents/ESC.mp4)*
 
 ## Hardware
 
@@ -14,11 +13,9 @@ STM32F103C8 기반 센서리스 BLDC ESC. 회로·4-layer PCB 설계 및 펌웨�
 - **Power:** 12V→5V Buck, USB 5V와 diode ORing, 3.3V LDO
 - **BEMF sensing:** 상전압 ADC 입력 및 TLV3202 외부 비교기
 - **Current sensing:** 10mΩ 로우사이드 션트 및 INA180A3 × 3
-- **Interface:** USB 2.0 FS, UART, LED, 버튼, 가변저항, 테스트 포인트
+- **Interface:** USB 2.0 FullSpeed, UART, LED, 버튼, 가변저항, 테스트 포인트
 
-회로·BOM 작성, PCB 배치·배선 및 bring-up을 직접 수행했다. SMT 조립은 외주 제작, 커넥터 납땜과 보드 수정은 직접 진행했다.
-
-USB 전원은 MCU 측에 공급하며, 모터 구동에는 별도의 12V 입력이 필요하다.
+회로,BOM 작성, PCB 부품 배치 및 배선, 보드 bring-up을 직접 수행했다. 부품 실장은 SMT 조립을 외주하였다.
 
 ### 3D Board View
 
@@ -50,7 +47,7 @@ USB 전원은 MCU 측에 공급하며, 모터 구동에는 별도의 12V 입력�
 
 ## Firmware
 
-C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어. Open-loop 기동 후 BEMF 기반 six-step 정류로 전환한다.
+C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어. Open-loop 기동 후 BEMF 기반 six-step 정류로 전환
 
 <p align="center">
   <img src="Images/Firmware/Senserless%20flow.drawio.svg" alt="센서리스 제어 흐름도" width="600">
@@ -68,7 +65,7 @@ C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어.
 - **Supply:** 12V DC power supply
 - **Load:** 무부하
 - **Input:** 가변저항 ADC 값으로 CCR 조절
-- **Observation:** 오실로스코프, USB CDC 모니터, PSU 표시값
+- **Observation:** 오실로스코프, USB CDC 모니터
 
 ### Results
 
@@ -80,14 +77,12 @@ C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어.
   </a>
 </p>
 
-[구동 영상](Documents/ESC_activate_h264.mp4) — 무부하 운전 및 노브 조작. 오디오 포함.
+[구동 영상](Documents/ESC_activate_h264.mp4) — 무부하 운전 및 노브 조작.
 
 | 항목 | 관찰 결과 |
 | --- | --- |
 | 속도 조절 | 노브 입력에 따른 CCR 및 회전 속도 변화 확인 |
-| 최대 시험 설정 | ARR=1800, CCR=1750 — 설정 비율 약 97.2%, 게이트 ON 시간 실측 아님 |
-| 연속 구동 | 시험한 최대 듀티에서 약 1분, 모터 발열 동반 |
-| 입력 전류 | 위 조건에서 PSU 약 0.6A 표시, 정밀 계측값·상전류 아님 |
+| 최대 시험 설정 | ARR=1800, CCR=1750 — 설정 비율 약 97.2% |
 
 #### PC Monitor
 
@@ -101,21 +96,21 @@ CH1: 스텝 GPIO · CH2: 플로팅 상 · CH3: Vcom · CH4: 비교기 출력.
 
 각 행은 왼쪽 Step 1, 오른쪽 Step 2 파형으로 구성.
 
-**저듀티**
+**저듀티 CCR 220**
 
 <p align="center">
   <img src="Images/Scope/Step%201%20Low%20Duty.png" width="48%" alt="저듀티 Step 1">
   <img src="Images/Scope/Step%202%20Low%20Duty.png" width="48%" alt="저듀티 Step 2">
 </p>
 
-**중듀티**
+**중듀티 CCR 700**
 
 <p align="center">
   <img src="Images/Scope/Step%201%20Mid%20Duty.png" width="48%" alt="중듀티 Step 1">
   <img src="Images/Scope/Step%202%20Mid%20Duty.png" width="48%" alt="중듀티 Step 2">
 </p>
 
-**고듀티**
+**고듀티 CCR 700 **
 
 <p align="center">
   <img src="Images/Scope/Step%201%20High%20Duty.png" width="48%" alt="고듀티 Step 1">
