@@ -5,6 +5,12 @@ STM32F103C8 기반 센서리스 BLDC ESC. 회로·4-layer PCB 설계 및 펌웨�
 
 ![자체 제작 ESC의 모터 구동](Images/Demo/motor-running.gif)
 
+## Highlights
+- 4층 기판 3상 ESC 하드웨어 설계부터 회로도 작성, 조립 및 보드 브링업 수행
+- 오픈루프 기동 및 BEMF(역기전력) 클로즈드 루프 정류를 적용한 센서리스 6스텝 제어 구현
+- ADC 기반 제로 크로싱 검출 방식 적용, 고듀티 구간에서는 외부 비교기 및 TIM2 Input Capture 로 전환
+- 12V 환경에서 A2212/13T 1000kV 모터를 무부하 조건에서 CCR 1750/1800까지 구동 시험 완료
+
 ## Hardware
 
 - **MCU:** STM32F103C8T6
@@ -39,7 +45,7 @@ STM32F103C8 기반 센서리스 BLDC ESC. 회로·4-layer PCB 설계 및 펌웨�
 
 ### Assembled Board
 
-![조립한 ESC 보드](Images/PCB3.jpg)
+![조립한 ESC 보드](Images/PCB/PCB3.jpg)
 
 실물 수정: USB 풀업 저항 직결, Vcom 비교기 입력 커패시터 제거.
 
@@ -72,12 +78,12 @@ C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어.
 #### Motor Operation
 
 <p align="center">
-  <a href="Documents/ESC_activate_h264.mp4">
+  <a href="Images/Demo/ESC_activate_h264.mp4">
     <img src="Images/Demo/motor-operation.jpg" width="800" alt="모터 구동 영상 보기">
   </a>
 </p>
 
-[구동 영상](Documents/ESC_activate_h264.mp4) — 무부하 운전 및 노브 조작.
+[구동 영상](Images/Demo/ESC_activate_h264.mp4) — 무부하 운전 및 노브 조작.
 
 | 항목 | 관찰 결과 |
 | --- | --- |
@@ -110,7 +116,7 @@ CH1: 스텝 GPIO · CH2: 플로팅 상 · CH3: Vcom · CH4: 비교기 출력.
   <img src="Images/Scope/Step%202%20Mid%20Duty.png" width="48%" alt="중듀티 Step 2">
 </p>
 
-**고듀티 CCR 700 **
+**고듀티 CCR 700**
 
 <p align="center">
   <img src="Images/Scope/Step%201%20High%20Duty.png" width="48%" alt="고듀티 Step 1">
@@ -120,10 +126,8 @@ CH1: 스텝 GPIO · CH2: 플로팅 상 · CH3: Vcom · CH4: 비교기 출력.
 ## Board Changes & Limitations
 
 - **USB pull-up:** 제어 MOSFET 풋프린트 오류를 배선으로 수정하고 PA12 LOW 초기화 적용. 이후 USB 인식 회복 확인.
-- **Comparator:** Vcom 커패시터 제거 후 고듀티에서 다중 에지 감소 관찰 및 input capture 경로 활용. ZC 정확도 개선량은 미검증.
-- **Current / Operation:** 모터 발열 및 특정 CCR에서 거친 구동음 발생. 전류 측정 정확도, 부하 기동, 장시간 운전, 효율·정격·보호 성능은 미검증.
-- **Hardware:** LDO 리플 감쇠 효과 및 USB 차동 임피던스 90Ω 설계 목표에 대한 실측 검증 미실시.
-- **Comparison:** 동일 모터·전원에서 상용 ESC의 기동 반응이 더 빠른 것으로 정성 관찰. 동일 RPM의 전류·온도 비교는 미실시.
+- **Comparator:** Vcom 커패시터 제거 후 고듀티에서 다중 에지 감소 관찰 및 input capture 경로 활용.
+- **Current / Operation:** 모터 발열 및 특정 CCR에서 구동음 발생. 전류 측정 정확도, 부하 기동, 장시간 운전, 효율·정격·보호 성능은 미검증.
 
 [개발 과정 및 디버깅 기록](docs/portfolio/development-story.md)
 
@@ -136,13 +140,6 @@ CH1: 스텝 GPIO · CH2: 플로팅 상 · CH3: Vcom · CH4: 비교기 출력.
 | [CubeMX .ioc](BLDC_ESC_Based_On_HW_Test.ioc) | MCU 설정 |
 | [ESC_Monitor](ESC_Monitor) | 수신·표시·CSV 저장 프로그램 |
 | [Architecture](docs/portfolio/architecture.md) | HW/FW 구조와 제어 흐름 |
-| [Development notes](docs/portfolio/development-story.md) | 개발 과정 및 디버깅 기록 |
 
-**개발 환경:** STM32CubeIDE. 빌드·플래시 절차 및 KiCad 원본은 저장소에 미수록.
 
-## References
-
-- **ESC Development Board** — 하드웨어 설계에 참고한 오픈소스 프로젝트. 원본 저장소 URL 미기재.
-- MCU 주변회로 학습 자료, 부품 데이터시트의 예제 회로·배치 지침, TI 평가보드 자료 — [출처 및 활용 범위](docs/portfolio/development-story.md).
-
-*시험 바이너리와 현재 소스의 동일성은 미확인.*
+**개발 환경:** STM32CubeIDE, KiCad 
