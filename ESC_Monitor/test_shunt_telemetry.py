@@ -84,6 +84,36 @@ class ShuntTelemetryTests(unittest.TestCase):
             finally:
                 os.chdir(previous_dir)
 
+    def test_source_bits_transition_and_comp_exports(self):
+        engine = TelemetryEngine()
+        engine.set_recording(True)
+        for source in (0, 1, 0):
+            for step in range(1, 7):
+                wire = bytearray(WIRE)
+                wire[3] = 0x50 | (source << 3) | step
+                wire[20:26] = bytes.fromhex("e8 03 d0 07 b8 0b")
+                pkt = unpack_raw_packet(wire)
+                self.assertEqual(pkt['step'], step)
+                self.assertEqual(pkt['zc_source'], source)
+                engine._handle_sample(pkt)
+                record = engine.raw_buffer[-1]
+                if source:
+                    raw = (2000, 3000, 3000, 1000, 1000, 2000)[step - 1]
+                    self.assertAlmostEqual(record['current_a'], raw * 3.3 / 4095)
+                    self.assertIsNone(record['err_adc_vs_comp_us'])
+                    self.assertEqual(record['current_status'], 'ESTIMATE')
+                    self.assertEqual(record['current_basis'], 'LATEST_ADC_SAMPLE_STEP_UNVERIFIED')
+                    self.assertAlmostEqual(record['duty_pct'], pkt['ccr'] * 100 / 1800)
+            self.assertEqual(engine.zc_quality_stats['total_eval'], 6)
+        self.assertEqual(len(engine.sequence_summary_buffer), 18)
+        comp = list(engine.sequence_summary_buffer)[6:12]
+        for row in comp:
+            self.assertEqual(row['zc_source'], 'COMP')
+            self.assertIsNotNone(row['current_a'])
+            self.assertIsNone(row['ts_zc_adc'])
+            self.assertEqual(row['ts_zc'], 125)
+            self.assertIsNone(row['err_adc_vs_comp_us'])
+
     def test_calibration_and_rails(self):
         pkt = dict(step=1, shunt_a=100, shunt_b=1241, shunt_c=300)
         self.assertAlmostEqual(measure_current(pkt)['current_a'], 1.0, places=3)

@@ -77,13 +77,11 @@ C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어.
 
 #### Motor Operation
 
-<p align="center">
-  <a href="Images/Demo/ESC_activate_h264.mp4">
-    <img src="Images/Demo/motor-operation.jpg" width="800" alt="모터 구동 영상 보기">
+<div align="center">
+  <a href="https://youtu.be/g03CNRUJoPk">
+    <img src="https://img.youtube.com/vi/g03CNRUJoPk/maxresdefault.jpg" alt="유튜브 영상 보기" width="800">
   </a>
-</p>
-
-[구동 영상](Images/Demo/ESC_activate_h264.mp4) — 무부하 운전 및 노브 조작.
+</div>
 
 | 항목 | 관찰 결과 |
 | --- | --- |
@@ -116,7 +114,7 @@ CH1: 스텝 GPIO · CH2: 플로팅 상 · CH3: Vcom · CH4: 비교기 출력.
   <img src="Images/Scope/Step%202%20Mid%20Duty.png" width="48%" alt="중듀티 Step 2">
 </p>
 
-**고듀티 CCR 700**
+**고듀티 CCR 1400**
 
 <p align="center">
   <img src="Images/Scope/Step%201%20High%20Duty.png" width="48%" alt="고듀티 Step 1">

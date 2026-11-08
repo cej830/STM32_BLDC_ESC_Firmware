@@ -39,3 +39,6 @@ CURRENT_ADC_MAX = 4095
 SHUNT_RESISTANCE_OHM = 0.010
 SHUNT_AMPLIFIER_GAIN = 100.0
 SHUNT_ZERO_ADC = {"A": 0.0, "B": 0.0, "C": 0.0}
+
+# TIM1 center-aligned PWM: nominal duty = CCR / ARR (dead time excluded).
+PWM_ARR = 1800

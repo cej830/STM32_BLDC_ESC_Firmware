@@ -1,8 +1,28 @@
 # ESC Monitor — Shunt A/B/C 텔레메트리
 
-기준 FW 커밋: `462d3e0`. Monitor는 아래 **27바이트** 패킷을 수신합니다.
-현재 기준 커밋의 FW는 21바이트이므로, IDE에서 FW를 수정·빌드·다운로드한 뒤 사용하세요.
-기존 21바이트 패킷 자동 인식은 지원하지 않습니다.
+Monitor는 **27바이트 바이너리 패킷**과 아래 `info` 비트 배치를 사용한다.
+줄바꿈 기준 수신이 아니다. 기존 source 비트가 없는 FW/로그는 COMP 여부를 구분할 수 없다.
+
+| info 비트 | 의미 |
+| --- | --- |
+| [2:0] | step (1~6) |
+| [3] | ZC source: ADC=0, COMP=1 |
+| [5:4] | motor_state |
+| [7:6] | zc_event |
+
+상단에 ADC/COMP 경로를 크게 표시하며, 전환 시 현재 타이밍/이벤트 통계를 초기화한다.
+완료된 시퀀스와 RAW 캡처는 유지한다. 두 CSV 모두 검출 경로를 저장한다.
+COMP의 ZC 시각은 ADC 보간값이 아니므로 ADC−COMP 시간차는 N/A로 표시한다.
+ADC 콜백의 모드 검사 전에 `Update_Shunt()`를 수행하고, COMP 로그에도 션트값을
+복사하는 FW를 기준으로 ADC/COMP 모두 최신 전류 추정값과 raw A/B/C를 표시한다.
+듀티는 `CCR / PWM_ARR × 100`으로 표시한다. `config.py`의 `PWM_ARR=1800`은
+현재 FW 설정이며 패킷으로 수신하는 값이 아니다. 데드타임은 반영하지 않는다.
+RAW 및 시퀀스 CSV에 `duty_pct`, `current_a`, `current_basis`를 저장한다.
+`current_basis=LATEST_ADC_SAMPLE_STEP_UNVERIFIED`는 패킷 step으로 션트를 선택했지만
+ADC 측정 step과의 일치는 확인하지 못했음을 뜻한다. COMP 이벤트 순간 전류,
+전원 입력 평균전류 또는 20kHz 전체 전류 파형을 의미하지 않는다.
+TIM 침투(9998) 표시는 제거했다. 해당 구형 오류 패킷은 ZC 평가에서 제외한다.
+PC 타이밍 진단은 표시용이며 FW 보호 동작을 수행하지 않는다.
 
 ## FW 패킷 배치
 

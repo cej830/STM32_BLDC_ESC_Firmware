@@ -8,7 +8,7 @@ import serial
 import config
 from packet_def import (
     PACKET_SIZE, HEADER_BYTE, TAIL_BYTE,
-    TRIGGER_TIM_RACE, TRIGGER_TIMEOUT_FORCE,
+    TRIGGER_TIMEOUT_FORCE,
     TRIGGER_RISK_FORCE, TRIGGER_REJECT_FORCE,
     ZC_EVENT_MAP, MOTOR_STATE_MAP,
     unpack_raw_packet
@@ -43,7 +43,6 @@ class TelemetryEngine:
             "recv_ol": 0,
             "recv_cl": 0,
             "avg_dt": 50.0,
-            "race_9998": 0,
             "timeout_9999": 0,
             "risk_force_9997": 0,
             "reject_force_9996": 0,
@@ -51,6 +50,7 @@ class TelemetryEngine:
             "step_seq_err": 0,
             "curr_step": 0,
             "curr_mode": "IDLE",
+            "zc_source": None,
             "curr_zc_str": "NOT_YET",
             "curr_trigger": 0,
             "curr_ccr": 0,
@@ -177,7 +177,18 @@ class TelemetryEngine:
     # telemetry_engine.py _handle_sample() 내부 발췌
 
     def _handle_sample(self, pkt):
+        source = pkt["zc_source_str"]
+        if source != self.stats["zc_source"]:
+            # Do not compare durations or combine incomplete cycles across sources.
+            self.analyzer = ZCStabilityAnalyzer()
+            self._last_step = None
+            self._current_cycle_steps.clear()
+            self.reset_zc_quality_stats()
+            self.reset_already_count()
+        self.stats["zc_source"] = source
         current = measure_current(pkt)
+        current["current_basis"] = "LATEST_ADC_SAMPLE_STEP_UNVERIFIED"
+        current["duty_pct"] = pkt["ccr"] * 100.0 / config.PWM_ARR
         pkt = {**pkt, **current}
         self.stats["current_sample"] = current
         self.stats["total_recv"] += 1
@@ -187,6 +198,9 @@ class TelemetryEngine:
         trigger = pkt["delay_trigger"]
         ccr = pkt["ccr"]
 
+        for code, key in ((9999, "timeout_9999"), (9997, "risk_force_9997"), (9996, "reject_force_9996")):
+            if trigger == code:
+                self.stats[key] += 1
         is_cl = (motor_state in (1, 2))
         if is_cl:
             self.stats["recv_cl"] += 1
@@ -222,13 +236,14 @@ class TelemetryEngine:
 
         # ZC 평가 (DETECTED = 1)
         zc_eval = None
-        if zc_event == 1 and trigger != TRIGGER_TIM_RACE and (1 <= step <= 6):
+        if zc_event == 1 and trigger not in (9998, TRIGGER_TIMEOUT_FORCE, TRIGGER_RISK_FORCE, TRIGGER_REJECT_FORCE) and (1 <= step <= 6):
             zc_eval = self.analyzer.evaluate(
                 step, 
                 pkt["t_start"], 
                 pkt["t_zc"], 
                 pkt["ts_tim"], 
-                pkt["cnt_ic"]
+                pkt["cnt_ic"],
+                source
             )
             
             node = self.analyzer.nodes[step]
@@ -241,7 +256,9 @@ class TelemetryEngine:
                 "e_rpm": int(self.analyzer.e_rpm),
                 "m_rpm": int(self.analyzer.m_rpm),
                 "step_period_us": node.step_period,
-                "ts_zc_adc": pkt["t_zc"],
+                "zc_source": source,
+                "ts_zc": pkt["t_zc"],
+                "ts_zc_adc": pkt["t_zc"] if source == "ADC" else None,
                 "ts_tim_comp": pkt["ts_tim"],
                 "err_adc_vs_comp_us": node.err_adc_vs_comp_us,
                 "cnt_ic": pkt["cnt_ic"],
@@ -277,7 +294,7 @@ class TelemetryEngine:
         if self.is_recording:
             record = {
                 **pkt,
-                "err_adc_vs_comp_us": self.analyzer.nodes[step].err_adc_vs_comp_us if (1 <= step <= 6) else 0,
+                "err_adc_vs_comp_us": zc_eval["err_adc_vs_comp_us"] if zc_eval else None,
                 "zc_eval": zc_eval["status"] if zc_eval else "N/A"
             }
             self.raw_buffer.append(record)

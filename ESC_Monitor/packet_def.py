@@ -33,7 +33,6 @@ ZC_EVENT_MAP = {
 }
 
 TRIGGER_TIMEOUT_FORCE = 9999
-TRIGGER_TIM_RACE = 9998
 TRIGGER_RISK_FORCE = 9997
 TRIGGER_REJECT_FORCE = 9996
 
@@ -41,7 +40,8 @@ def unpack_raw_packet(raw_bytes):
     unpacked = struct.unpack(PACKET_FORMAT, raw_bytes)
     info = unpacked[2]
 
-    step = info & 0x0F
+    step = info & 0x07
+    zc_source = (info >> 3) & 0x01
     motor_state_raw = (info >> 4) & 0x03
     zc_event_raw = (info >> 6) & 0x03
 
@@ -50,6 +50,8 @@ def unpack_raw_packet(raw_bytes):
         "ccr": unpacked[1],
         "info_raw": info,
         "step": step,
+        "zc_source": zc_source,
+        "zc_source_str": "COMP" if zc_source else "ADC",
         "motor_state_raw": motor_state_raw,
         "motor_state_str": MOTOR_STATE_MAP.get(motor_state_raw, "UNKNOWN"),
         "zc_event": zc_event_raw,
@@ -57,7 +59,7 @@ def unpack_raw_packet(raw_bytes):
         "bemf_curr": unpacked[3],
         "t_start": unpacked[4],
         "t_curr": unpacked[5],
-        "t_zc": unpacked[6],             # ADC 선형보간 ts_zc
+        "t_zc": unpacked[6],             # 선택된 검출 경로의 ZC 시각
         "delay_limited": unpacked[7],
         "delay_trigger": unpacked[8],
         "delay_par": unpacked[9],

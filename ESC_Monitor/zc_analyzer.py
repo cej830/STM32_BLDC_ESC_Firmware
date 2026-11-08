@@ -25,6 +25,7 @@ class StepNode:
         self.period_offset_us = 0
 
         # ADC 선형보간 vs 비교기 인풋캡쳐 분석 필드
+        self.zc_source = "ADC"
         self.last_t_zc_adc = 0       # ADC 보간 ts_zc
         self.last_ts_tim = 0         # 비교기 IC ts_tim
         self.err_adc_vs_comp_us = 0  # (t_zc_adc - ts_tim) 시간차 (us)
@@ -63,7 +64,7 @@ class ZCStabilityAnalyzer:
         if 1 <= new_step <= 6:
             self.nodes[new_step].last_t_start = t_start
 
-    def evaluate(self, step, t_start, t_zc, ts_tim, cnt_ic):
+    def evaluate(self, step, t_start, t_zc, ts_tim, cnt_ic, zc_source="ADC"):
         if not (1 <= step <= 6):
             return None
 
@@ -73,16 +74,17 @@ class ZCStabilityAnalyzer:
             node.zc_pos_pct = (duration / node.step_period) * 100.0
 
         # 1. ADC 보간값 vs 비교기 인풋캡쳐 시간차 계산
+        node.zc_source = zc_source
         node.last_t_zc_adc = t_zc
         node.last_ts_tim = ts_tim
         node.cnt_ic = cnt_ic
 
-        if ts_tim > 0:
+        if zc_source == "ADC" and cnt_ic > 0:
             # 양수: ADC 보간 ZC가 비교기보다 늦게 검출됨 (딜레이)
             # 음수: ADC 보간 ZC가 비교기보다 일찍 검출됨
             node.err_adc_vs_comp_us = signed_diff_u16(t_zc, ts_tim)
         else:
-            node.err_adc_vs_comp_us = 0
+            node.err_adc_vs_comp_us = None
 
         # 2. 1회전(전기각 360도) 주기 및 RPM 산출
         if step == 1:

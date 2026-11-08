@@ -90,6 +90,13 @@ class BLDCApp:
             return
 
         s = self.engine.stats
+        source_mode = s.get("zc_source")
+        comp = source_mode == "COMP"
+        self.view.lbl_source.config(
+            text=("COMP · 외부 비교기 / TIM2 Input Capture" if comp else
+                  "ADC · PWM 동기 샘플링 / SW BEMF 선형보간") if source_mode else "검출 경로: 수신 대기",
+            foreground="#9B4D00" if comp else "#165DAA")
+        self.view.tree.heading("ts_zc_adc", text="COMP ZC 시각" if comp else "ADC 보간 ZC 시각")
         current = s.get("current_sample")
         if current is not None:
             amps = current["current_a"]
@@ -97,7 +104,8 @@ class BLDCApp:
             source, sink = current["drive_phase"], current["low_side_phase"]
             path = f"{source} → {sink} → Shunt {sink} → GND" if sink else "---"
             self.view.lbl_current.config(
-                text=f"로우사이드 전류 추정: {amp_text} A | 경로: {path} | {current['current_status']}",
+                text=f"듀티: {current['duty_pct']:.1f}% | 최신 전류 추정: {amp_text} A | {current['current_status']}\n"
+                     f"패킷 step 기준 경로: {path} · ADC 측정 step 일치 미확인",
                 foreground="black" if current["current_status"] == "ESTIMATE" else "darkorange"
             )
         if s["total_recv"] > 0:
@@ -130,21 +138,20 @@ class BLDCApp:
         # ALREADY 비율이 30%를 넘으면 샘플링 속도 한계 경고 (빨간색)
         color = "red" if p_alr >= 30.0 else ("darkorange" if p_alr >= 10.0 else "#8A2BE2")
         self.view.lbl_zc_quality.config(
-            text=f"ESC 센싱 진단: 평가수: {total_eval:,}회 | 정상(DETECT): {p_det:4.1f}% | 조기통과(ALREADY): {p_alr:4.1f}% | 데드밴드(PASS): {p_pas:4.1f}%",
+            text=f"{source_mode or '대기'} 이벤트: 평가수: {total_eval:,}회 | DETECTED: {p_det:4.1f}% | ALREADY: {p_alr:4.1f}% | PASS: {p_pas:4.1f}%",
             foreground=color
         )
 
         # 1. 스트림 유실 및 통신 현황
         self.view.lbl_stream.config(
-            text=f"수신: {s['total_recv']}개 | 전체 유실률: {loss_all:4.2f}% (OL: {loss_ol:4.2f}% / CL: {loss_cl:4.2f}%) | "
-                 f"평균 dt: {s['avg_dt']:4.1f}us | 스텝에러: {s['step_seq_err']}회"
+            text=f"수신: {s['total_recv']:,}개 | 프레임 오류: {s['sync_err']} | 스텝 순서 불일치: {s['step_seq_err']}회"
         )
 
         # 2. 모터 제어 상태 및 트리거 현황
         self.view.lbl_flags.config(
-            text=f"모터 상태: CCR:[{curr_ccr:4d}] | M-RPM:[{m_rpm:5d} RPM] (전기각 E-RPM:{e_rpm:5d}, 360°ZC:{zc_cycle_us}us) | "
-                 f"Step:[{s['curr_step']}] {s['curr_mode']} [{s['curr_zc_str']}] | "
-                 f"TIM침투(9998)={s['race_9998']} | 타임아웃(9999)={s['timeout_9999']} | 강제정지(9997/9996)={s['risk_force_9997']}/{s['reject_force_9996']}"
+            text=f"CCR: {curr_ccr} | Step: {s['curr_step']} | {s['curr_mode']} | ZC: {s['curr_zc_str']}\n"
+                 f"추정 M-RPM: {m_rpm:,} | E-RPM: {e_rpm:,} | 전기각 1주기: {zc_cycle_us} us\n"
+                 f"타임아웃: {s['timeout_9999']} | 강제정지 9997 / 9996: {s['risk_force_9997']} / {s['reject_force_9996']}"
         )
 
         # 3. 단일 글로벌 리스크 상태
@@ -154,7 +161,7 @@ class BLDCApp:
         
         streak_color = "red" if g_streak >= (config.REJECT_COUNT // 2) else ("darkorange" if g_streak > 0 else "blue")
         self.view.lbl_global_risk.config(
-            text=f"탈조 방지 모니터: 연속 RISK: [{g_streak:2d}/{config.REJECT_COUNT}] | 역대 최대 연속 RISK: [{g_max:2d}] | 총 REJECT: [{g_reject}회]",
+            text=f"PC 타이밍 진단: 연속 RISK: [{g_streak:2d}/{config.REJECT_COUNT}] | 역대 최대 연속 RISK: [{g_max:2d}] | 총 REJECT: [{g_reject}회]",
             foreground=streak_color
         )
 
@@ -168,11 +175,11 @@ class BLDCApp:
             dur_str = f"{node.curr_duration} us" if node.curr_duration is not None else "---"
             center_str = f"{node.zc_pos_pct:4.1f} %" if node.step_period > 0 else "---"
             
-            ts_adc_str = f"{node.last_t_zc_adc}" if node.last_t_zc_adc > 0 else "---"
-            ts_tim_str = f"{node.last_ts_tim}" if node.last_ts_tim > 0 else "---"
+            ts_adc_str = f"{node.last_t_zc_adc}" if node.curr_duration is not None else "---"
+            ts_tim_str = f"{node.last_ts_tim}" if node.cnt_ic > 0 else "---"
             
             # 오차 표시 (예: +3.0 us 또는 -5.0 us)
-            err_str = f"{node.err_adc_vs_comp_us:+d} us" if node.last_ts_tim > 0 else "---"
+            err_str = f"{node.err_adc_vs_comp_us:+d} us" if node.err_adc_vs_comp_us is not None and node.curr_duration is not None else "N/A"
             cnt_ic_str = f"{node.cnt_ic} 회"
 
             self.view.tree.item(

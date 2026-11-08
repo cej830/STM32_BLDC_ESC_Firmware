@@ -190,6 +190,8 @@ void Algo_BLDC_Startup()
 
 void Algo_BLDC_AdcISRCallback()
 {
+	Update_Shunt();
+
 	if(motorcontrol.zc_source != ZC_SOURCE_ADC)
 	{
 		return;
@@ -206,6 +208,7 @@ void Algo_BLDC_AdcISRCallback()
 	adc_snapshot.is_sample_first = zc_manage.is_sample_first;
 	adc_snapshot.ts_step         = zc_manage.ts_start;
 	adc_snapshot.is_searching    = zc_manage.is_searching;
+	adc_snapshot.zc_source 		 = motorcontrol.zc_source;
 
 
 	//Get timestamp and Duration.
@@ -217,8 +220,6 @@ void Algo_BLDC_AdcISRCallback()
 	{
 		return;
 	}
-
-	Update_Shunt();
 
 	int16_t bemf_curr = Calculate_BEMF(adc_snapshot.step);	//sw bemf 계산.
 	MotorTelemetry_t motor_log = {0};
@@ -575,6 +576,7 @@ void Common_Process(uint16_t zc)
 	adc_snapshot.is_sample_first = zc_manage.is_sample_first;
 	adc_snapshot.ts_step         = zc_manage.ts_start;
 	adc_snapshot.is_searching    = zc_manage.is_searching;
+	adc_snapshot.zc_source 		 = motorcontrol.zc_source;
 
 	uint16_t ts_curr = zc;
 	uint16_t dur_edge = (uint16_t)(zc - adc_snapshot.ts_step);
@@ -595,6 +597,9 @@ void Common_Process(uint16_t zc)
 	temp.ts_curr   = ts_curr;
 	temp.bemf_curr = bemf_curr;
 
+	temp.shuntA = shunt.v_shuntA;
+	temp.shuntB = shunt.v_shuntB;
+	temp.shuntC = shunt.v_shuntC;
 
 	if(adc_snapshot.is_searching == 0)
 	{
@@ -714,6 +719,7 @@ void WatchDog_TIM_Callback()
 	adc_snapshot.is_sample_first = zc_manage.is_sample_first;
 	adc_snapshot.ts_step         = zc_manage.ts_start;
 	adc_snapshot.is_searching    = zc_manage.is_searching;
+	adc_snapshot.zc_source		 = motorcontrol.zc_source;
 
 	MotorTelemetry_t motor_log = {0};
 	Motor_Log_Temp temp = {0};
@@ -726,7 +732,8 @@ static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motor_Log_Temp* temp
 {
 	uint8_t info = 0;
 
-	info |= (uint8_t)((snapshot->step) & 0x0F);				//Bit [3:0] : step
+	info |= (uint8_t)((snapshot->step) & 0x07);				//Bit [3:0] : step
+	info |= (uint8_t)(((snapshot->zc_source) & 0x01) << 3);
 	info |= (uint8_t)(((snapshot->motor_state) & 0x03) << 4);	//Bit [5:4] : motor_state
 	info |= (uint8_t)((temp->is_zc_detect & 0x03) << 6);		//Bit [7:6] : zc_event
 
@@ -752,7 +759,6 @@ static inline void Packing_Motor_Log(MotorTelemetry_t* log, Motor_Log_Temp* temp
 	log->shunt_C = temp->shuntC;
 
 	log->tail = TAIL;
-
 
 }
 

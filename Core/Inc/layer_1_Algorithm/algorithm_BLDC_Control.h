@@ -188,6 +188,7 @@ typedef struct
 	uint8_t is_searching;
 
 	uint16_t ts_step;
+	ZC_SOURCE zc_source;
 
 }ADC_snapshot_t;
 

@@ -21,7 +21,7 @@ typedef struct
 
 	uint16_t ccr_current;		//타이머 현재 CCR
 
-	uint8_t  info;				// step/ OL-CL/ ZC_event
+	uint8_t  info;				//step/ OL-CL/ ZC_event
 
 	int16_t BEMF_curr;			//현재 샘플의 BEMF값 (* tempor)
 
@@ -32,7 +32,7 @@ typedef struct
 	uint16_t delay_limited;		//리미터를 적용한 30도 전기각 시간				  (* tempor)
 	uint16_t delay_trigger;		//30도 전기각 시간을 맞추기 위해 현재 샘플에서 트리거할 대기시간 (* tempor)
 
-	uint8_t  delay_PAR;			//딜레이 제어 증감 파라미터
+	uint8_t  delay_PAR;			//현재 모터 상태 전달 변수
 
 	uint16_t ts_tim;
 	uint8_t cnt_ic;

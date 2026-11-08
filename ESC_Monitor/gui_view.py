@@ -5,8 +5,12 @@ class DashboardView:
     def __init__(self, root):
         self.root = root
         self.root.title("BLDC Telemetry & ZC Stability Monitor")
-        self.root.geometry("1100x700")
+        self.root.geometry("1400x900")
 
+        style = ttk.Style(root)
+        style.configure(".", font=("맑은 고딕", 11))
+        style.configure("Treeview", font=("맑은 고딕", 12), rowheight=34)
+        style.configure("Treeview.Heading", font=("맑은 고딕", 11, "bold"))
         self._build_top_panel()
         self._build_stream_status_panel()
         self._build_zc_table_panel()
@@ -38,30 +42,34 @@ class DashboardView:
         frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.lbl_stream = ttk.Label(
-            frame, 
-            text="수신: 0개 | 전체 유실률: 0.00% (OL: 0.00% / CL: 0.00%) | 평균 dt: 0.0us | 스텝에러: 0", 
-            font=("Consolas", 10, "bold")
+            frame,
+            text="수신: 0개 | 전체 유실률: 0.00% (OL: 0.00% / CL: 0.00%) | 평균 dt: 0.0us | 스텝에러: 0",
+            font=("맑은 고딕", 12, "bold")
         )
         self.lbl_stream.pack(anchor=tk.W, padx=10, pady=2)
 
+        self.lbl_source = ttk.Label(frame, text="검출 경로: 수신 대기", font=("맑은 고딕", 16, "bold"))
+        self.lbl_source.pack(anchor=tk.W, padx=10, pady=6)
+
         # 모터 상태 및 MCU 에러/트리거 플래그 통합 모니터
         self.lbl_flags = ttk.Label(
-            frame, 
-            text="모터 상태: CCR: [   0] | Step: [-] IDLE | ZC: [NOT_YET] | TIM침투(9998)=0 | 타임아웃(9999)=0 | 강제정지(9997/9996)=0/0", 
-            font=("Consolas", 10)
+            frame,
+            text="모터 상태: CCR: [   0] | Step: [-] IDLE | ZC: [NOT_YET] | 타임아웃(9999)=0 | 강제정지(9997/9996)=0/0",
+            font=("맑은 고딕", 12)
         )
-        self.lbl_flags.pack(anchor=tk.W, padx=10, pady=2)
+        self.lbl_flags.configure(justify=tk.LEFT)
+        self.lbl_flags.pack(anchor=tk.W, padx=10, pady=4)
 
         self.lbl_shunt = ttk.Label(
             frame,
             text="Shunt (raw uint16): A: --- | B: --- | C: ---",
-            font=("Consolas", 10)
+            font=("맑은 고딕", 12)
         )
         self.lbl_shunt.pack(anchor=tk.W, padx=10, pady=2)
 
         self.lbl_current = ttk.Label(
-            frame, text="로우사이드 전류 추정: --- A | 경로: ---",
-            font=("Consolas", 10, "bold")
+            frame, text="듀티: --- % | 최신 ADC 전류 추정: --- A", justify=tk.LEFT,
+            font=("맑은 고딕", 12, "bold")
         )
         self.lbl_current.pack(anchor=tk.W, padx=10, pady=2)
 
@@ -71,8 +79,8 @@ class DashboardView:
 
         self.lbl_global_risk = ttk.Label(
             sub_frame,
-            text="탈조 방지 모니터: 연속 RISK: [ 0/8] | 역대 최대 연속 RISK: [ 0] | 총 REJECT: [0회]",
-            font=("Consolas", 10, "bold"),
+            text="PC 타이밍 진단: 연속 RISK: [ 0/8] | 역대 최대 연속 RISK: [ 0] | 총 REJECT: [0회]",
+            font=("맑은 고딕", 12, "bold"),
             foreground="blue"
         )
         self.lbl_global_risk.pack(side=tk.LEFT)
@@ -83,7 +91,7 @@ class DashboardView:
         self.lbl_zc_quality = ttk.Label(
             diag_frame,
             text="ESC 센싱 진단: 평가수: 0회 | 정상 검출(DETECT): 0.0% | 조기 교차(ALREADY): 0.0% | 데드밴드(PASS): 0.0%",
-            font=("Consolas", 10, "bold"),
+            font=("맑은 고딕", 12, "bold"),
             foreground="#8A2BE2"
         )
         self.lbl_zc_quality.pack(side=tk.LEFT)
@@ -94,7 +102,7 @@ class DashboardView:
         self.lbl_already = ttk.Label(
             sub_frame,
             text=" |  ALREADY 발생: 0회",
-            font=("Consolas", 10, "bold"),
+            font=("맑은 고딕", 12, "bold"),
             foreground="#D9534F"
         )
         self.lbl_already.pack(side=tk.LEFT, padx=5)
@@ -103,11 +111,11 @@ class DashboardView:
         self.btn_reset_already.pack(side=tk.LEFT, padx=5)
 
     def _build_zc_table_panel(self):
-        frame = ttk.LabelFrame(self.root, text="스텝별 ZC 타이밍 분석 및 ADC 보간 vs 비교기(COMP) 인풋캡쳐 정밀 비교")
+        frame = ttk.LabelFrame(self.root, text="스텝별 ZC 타이밍 · 현재 검출 경로의 데이터 (us)")
         frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         cols = (
-            "step", "step_period", "zc_duration", "zc_center", 
+            "step", "step_period", "zc_duration", "zc_center",
             "ts_zc_adc", "ts_tim_comp", "err_comp", "cnt_ic", "status"
         )
         self.tree = ttk.Treeview(frame, columns=cols, show="headings", height=7)
@@ -117,13 +125,13 @@ class DashboardView:
             "step_period": "스텝 총길이",
             "zc_duration": "ZC 발생시간",
             "zc_center": "ZC 위치(%)",
-            "ts_zc_adc": "ADC보간 ts_zc",
+            "ts_zc_adc": "ZC 시각",
             "ts_tim_comp": "비교기 ts_tim",
-            "err_comp": "오차 (ADC-비교기)",
+            "err_comp": "ADC−COMP (us)",
             "cnt_ic": "비교기 엣지수",
             "status": "판정"
         }
-        
+
         widths = {
             "step": 75, "step_period": 110, "zc_duration": 110, "zc_center": 95,
             "ts_zc_adc": 115, "ts_tim_comp": 115, "err_comp": 135, "cnt_ic": 95, "status": 90
@@ -136,8 +144,8 @@ class DashboardView:
         self.tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self.tree.tag_configure("VALID", foreground="green")
-        self.tree.tag_configure("RISK", foreground="darkorange", font=("Segoe UI", 9, "bold"))
-        self.tree.tag_configure("REJECT", foreground="red", font=("Segoe UI", 9, "bold"))
+        self.tree.tag_configure("RISK", foreground="darkorange", font=("맑은 고딕", 12, "bold"))
+        self.tree.tag_configure("REJECT", foreground="red", font=("맑은 고딕", 12, "bold"))
 
         for s in range(1, 7):
             self.tree.insert("", tk.END, iid=str(s), values=(
@@ -148,7 +156,7 @@ class DashboardView:
         frame = ttk.LabelFrame(self.root, text="이벤트 로그 및 단축키 안내 [Space: 캡처 트리거]")
         frame.pack(fill=tk.X, padx=10, pady=5)
 
-        self.txt_log = tk.Text(frame, height=4, state=tk.DISABLED, bg="#F5F5F5", font=("Consolas", 9))
+        self.txt_log = tk.Text(frame, height=4, state=tk.DISABLED, bg="#F5F5F5", font=("맑은 고딕", 11))
         self.txt_log.pack(fill=tk.X, padx=5, pady=3)
 
     def append_log(self, msg):
