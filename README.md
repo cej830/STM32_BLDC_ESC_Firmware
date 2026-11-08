@@ -79,8 +79,13 @@ C, STM32 HAL 및 레지스터 제어로 구현한 인터럽트 기반 펌웨어.
 
 <div align="center">
   <a href="https://youtu.be/g03CNRUJoPk">
-    <img src="https://img.youtube.com/vi/g03CNRUJoPk/maxresdefault.jpg" alt="유튜브 영상 보기" width="800">
+    <img src="https://img.youtube.com/vi/g03CNRUJoPk/maxresdefault.jpg"
+         alt="모터 및 PC 모니터링 동작 영상 — 클릭하여 YouTube에서 재생"
+         width="800">
   </a>
+  <p>
+    <a href="https://youtu.be/g03CNRUJoPk">▶ YouTube에서 동작 영상 보기</a>
+  </p>
 </div>
 
 | 항목 | 관찰 결과 |
